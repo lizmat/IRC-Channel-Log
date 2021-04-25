@@ -1,0 +1,5 @@
+.precomp/
+/IRC-Channel-Log-*
+lib/IRC/Log/
+/releases/
+/logs

@@ -1,0 +1,15 @@
+use Test;
+use IRC::Log::Colabti:ver<0.0.11>:auth<cpan::ELIZABETH>;
+use IRC::Channel::Log;
+
+plan 1;
+
+my $channel := IRC::Channel::Log.new(
+  logdir => $?FILE.IO.sibling('raku'),
+  class  => IRC::Log::Colabti,
+);
+
+my %logs := $channel.logs;
+is %logs.elems, 2, 'did we get 2 dates with logs';
+
+# vim: expandtab shiftwidth=4
