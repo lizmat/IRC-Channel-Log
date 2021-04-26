@@ -20,7 +20,7 @@
   "tags": [
   ],
   "test-depends": [
-    "IRC::Log::Colabti:ver<0.0.11>:auth<cpan::ELIZABETH>"
+    "IRC::Log::Colabti:ver<0.0.13>:auth<cpan::ELIZABETH>"
   ],
   "version": "0.0.1"
 }

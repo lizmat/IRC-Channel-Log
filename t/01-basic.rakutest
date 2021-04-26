@@ -1,15 +1,47 @@
 use Test;
-use IRC::Log::Colabti:ver<0.0.11>:auth<cpan::ELIZABETH>;
+use IRC::Log::Colabti:ver<0.0.14>:auth<cpan::ELIZABETH>;
 use IRC::Channel::Log;
 
-plan 1;
+plan 17;
 
 my $channel := IRC::Channel::Log.new(
   logdir => $?FILE.IO.sibling('raku'),
   class  => IRC::Log::Colabti,
 );
+isa-ok $channel, IRC::Channel::Log;
+is-deeply $channel.dates, [<2021-04-23 2021-04-24>],
+  'did we get correct dates';
+is $channel.problems.elems, 0,
+  'there should be no problems';
+
+is $channel.entries.elems, 1229,
+  'did we get correct total entries';
+is $channel.entries(:control).elems, 766,
+  'did we get correct number of control messages';
+is $channel.entries(:conversation).elems, 463,
+  'did we get correct number of  messages';
 
 my %logs := $channel.logs;
 is %logs.elems, 2, 'did we get 2 dates with logs';
+isa-ok %logs<2021-04-23>, IRC::Log::Colabti;
+isa-ok %logs<2021-04-24>, IRC::Log::Colabti;
+
+my %nicks := $channel.nicks;
+is %nicks.elems, 259, 'did we get correct number of nicks';
+is %nicks<lizmat>.elems, 2, 'did we get messages on both dates';
+
+is $channel.entries(:nicks<lizmat>).elems, 118,
+  'did we get correct number of entries by lizmat';
+is $channel.entries(:control, :nicks<lizmat>).elems, 1,
+  'did we get correct number of control messages by lizmat';
+is $channel.entries(:conversation, :nicks<lizmat>).elems, 117,
+  'did we get correct number of conversation messages by lizmat';
+is $channel.entries(:dates<2021-04-24>, :nicks<lizmat>).elems, 49,
+  'did we get correct number of entries by lizmat on 2021-04-24';
+is $channel.entries(
+  :dates("2021-04-20".Date .. "2021-04-23".Date), :nicks<lizmat>
+).elems, 69, 'correct number of entries by lizmat from Date range';
+is $channel.entries(:nicks<lizmat japhb>).elems, 146,
+  'correct number of entries by lizmat and japhb';
 
 # vim: expandtab shiftwidth=4
