@@ -81,7 +81,7 @@ IRC::Channel::Log - access to all logs of an IRC channel
 use IRC::Log::Colabti;  # class implementing one day of logs
 use IRC::Channel::Log;
 
-my $channel = IRC::Channel::Log(
+my $channel = IRC::Channel::Log.new(
   logdir => "logs/raku",        # directory containing logs
   class  => IRC::Log::Colabti,  # for example
 );
@@ -104,6 +104,49 @@ say $channel.problems.elems;    # hash with problems / date
 
 IRC::Channel::Log provides a programmatic interface to the IRC log files
 of a channel.
+
+=head1 CLASS METHODS
+
+=head2 new
+
+=begin code :lang<raku>
+
+use IRC::Log::Colabti;  # class implementing one day of logs
+use IRC::Channel::Log;
+
+my $channel = IRC::Channel::Log.new(
+  logdir => "logs/raku",        # directory containing logs
+  class  => IRC::Log::Colabti,  # for example
+);
+
+=end code
+
+The C<new> class method takes three named arguments:
+
+=head3 logdir
+
+The directory (either as a string or as an C<IO::Path> object) in which
+log file of the channel is located, as created by a logger such as
+C<IRC::Client::Plugin::Logger>.  This expects the directories to be
+organized by year, with all the logs of each day of a year in that
+directory.  For example, in the test of this module:
+
+  raku
+   |-- 2021
+        |-- 2021-04-23
+        |-- 2021-04-24
+
+This argument is required.
+
+=head3 class
+
+The class to be used to interpret log files, e.g. C<IRC::Log::Colabti>.
+This argument is also required.
+
+=head3 name
+
+The name of the channel.  Optional.  Defaults to the base name of the
+directory specified with C<logdir>.
 
 =head1 AUTHOR
 
