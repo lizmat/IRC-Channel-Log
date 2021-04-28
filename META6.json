@@ -6,6 +6,7 @@
   "build-depends": [
   ],
   "depends": [
+    "IRC::Log::Colabti:ver<0.0.15>:auth<cpan::ELIZABETH>"
   ],
   "description": "access to all logs of an IRC channel",
   "license": "Artistic-2.0",
