@@ -1,5 +1,5 @@
 use Test;
-use IRC::Log::Colabti:ver<0.0.15>:auth<cpan::ELIZABETH>;
+use IRC::Log::Colabti;
 use IRC::Channel::Log;
 
 plan 22;
