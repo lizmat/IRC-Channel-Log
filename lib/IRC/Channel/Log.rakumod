@@ -12,24 +12,22 @@ class IRC::Channel::Log:ver<0.0.1>:auth<cpan:ELIZABETH> {
 
     method TWEAK(--> Nil) {
         my $class := $!class;
-        my %logs = $!logdir.dir.map(*.dir.Slip)
+        %!logs = $!logdir.dir.map(*.dir.Slip)
 #          .hyper(:1batch)    # sadly, hyper segfaults sometimes
           .map: { .date => $_ with $class.new($_) }
 
-        @!dates = %logs.keys.sort;
+        @!dates = %!logs.keys.sort;
 
-        my %nicks;
         @!problems = @!dates.map: -> $date {
-            %nicks{.key}{$date} := .value for %logs{$date}.nicks;
+            my $log := %!logs{$date};
 
-            if %logs{$date}.problems -> @problems {
+            %!nicks{.key}{$date} := .value for $log.nicks;
+
+            if $log.problems -> @problems {
                 $date => @problems
             }
         }
-        @!nicks = %nicks.keys.sort;
-
-        %!logs  := %logs;
-        %!nicks := %nicks;
+        @!nicks = %!nicks.keys.sort;
     }
 
     # :starts-with post-processing filters
