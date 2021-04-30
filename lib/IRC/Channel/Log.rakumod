@@ -13,9 +13,9 @@ class IRC::Channel::Log:ver<0.0.2>:auth<cpan:ELIZABETH> {
     has Mu   @!logs;
     has      %!nicks;
 
-    method TWEAK(--> Nil) {
+    method TWEAK(:$batch = 4 --> Nil) {
         for $!logdir.dir.map(*.dir.Slip)
-          .hyper(:6batch)
+          .race(:batch($batch || 1))
           .map(-> $path { $_ with $!class.new($path) }) -> $log {
 
             my $date := $log.date.Str;
@@ -265,11 +265,13 @@ use IRC::Channel::Log;
 my $channel = IRC::Channel::Log.new(
   logdir => "logs/raku",        # directory containing logs
   class  => IRC::Log::Colabti,  # for example
+  name   => "foobar",           # defaults to logdir.basename
+  batch  => 1,                  # defaults to 6
 );
 
 =end code
 
-The C<new> class method takes three named arguments:
+The C<new> class method takes four named arguments:
 
 =head3 logdir
 
@@ -295,6 +297,14 @@ This argument is also required.
 
 The name of the channel.  Optional.  Defaults to the base name of the
 directory specified with C<logdir>.
+
+=head3 batch
+
+The batch size to use when racing to read all of the log files of the
+given channel.  Defaults to 6 as an apparent optimal values to optimize
+for wallclock and not have excessive CPU usage.  You can use C<:!batch>
+to indicate you do not want any multi-threading: this is equivalent to
+specifying C<1> or C<0> or C<True>.
 
 =head1 INSTANCE METHODS
 
