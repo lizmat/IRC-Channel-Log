@@ -6,6 +6,7 @@
   "build-depends": [
   ],
   "depends": [
+    "Array::Sorted::Util:ver<0.0.4>:auth<cpan:ELIZABETH>"
   ],
   "description": "access to all logs of an IRC channel",
   "license": "Artistic-2.0",
@@ -20,7 +21,7 @@
   "tags": [
   ],
   "test-depends": [
-    "IRC::Log::Colabti:ver<0.0.15>:auth<cpan:ELIZABETH>"
+    "IRC::Log::Colabti:ver<0.0.19>:auth<cpan:ELIZABETH>"
   ],
-  "version": "0.0.1"
+  "version": "0.0.2"
 }

@@ -1,43 +1,58 @@
 use v6.*;
 
-class IRC::Channel::Log:ver<0.0.1>:auth<cpan:ELIZABETH> {
+use Array::Sorted::Util:ver<0.0.4>:auth<cpan:ELIZABETH>;
+
+class IRC::Channel::Log:ver<0.0.2>:auth<cpan:ELIZABETH> {
     has IO() $.logdir is required;
     has Mu   $.class  is required;
-    has Str  $.name = $!logdir.basename;
+    has str  $.name = $!logdir.basename;
     has str  @.dates    is built(False);
+    has str  @.years    is built(False);
     has str  @.nicks    is built(False);
     has      @.problems is built(False);
-    has      %!logs;
+    has Mu   @!logs;
     has      %!nicks;
 
     method TWEAK(--> Nil) {
-        my $class := $!class;
-        %!logs = $!logdir.dir.map(*.dir.Slip)
-#          .hyper(:1batch)    # sadly, hyper segfaults sometimes
-          .map: { .date => $_ with $class.new($_) }
+        for $!logdir.dir.map(*.dir.Slip)
+          .hyper(:6batch)
+          .map(-> $path { $_ with $!class.new($path) }) -> $log {
 
-        @!dates = %!logs.keys.sort;
+            my $date := $log.date.Str;
+            inserts(@!dates, $date, @!logs, $log);
 
-        @!problems = @!dates.map: -> $date {
-            my $log := %!logs{$date};
-
-            %!nicks{.key}{$date} := .value for $log.nicks;
+            for $log.nicks {
+                if %!nicks{.key} -> %dates {
+                    %dates{$date} := .value;
+                }
+                else {
+                    (%!nicks{.key} := {}){$date} := .value;
+                }
+            }
 
             if $log.problems -> @problems {
-                $date => @problems
+                @!problems.push: $date => @problems;
             }
         }
+
         @!nicks = %!nicks.keys.sort;
     }
 
+#--------------------------------------------------------------------------------
+# Filters
+
     # :starts-with post-processing filters
-    multi method entries(IRC::Channel::Log:D:  # override :conversation and :control
-      Str:D :starts-with($text)!, :conversation($), :control($)
+    multi method entries(IRC::Channel::Log:D:
+      Str:D :starts-with($text)!,
+      :conversation($),  # ignored
+      :control($),       # ignored
     ) {
         self.entries(|%_).grep: { .conversation && .text.starts-with($text) }
     }
-    multi method entries(IRC::Channel::Log:D:  # override :conversation and :control
-      :starts-with(@text)!, :conversation($), :control($)
+    multi method entries(IRC::Channel::Log:D:
+      Str:D :starts-with(@text)!,
+            :conversation($),  # ignored
+            :control($),       # ignored
     ) {
         self.entries(|%_).grep: -> $entry {
             if $entry.conversation {
@@ -48,13 +63,18 @@ class IRC::Channel::Log:ver<0.0.1>:auth<cpan:ELIZABETH> {
     }
 
     # :contains post-processing filters
-    multi method entries(IRC::Channel::Log:D:  # override :conversation and :control
-      Str:D :contains($text)!, :conversation($), :control($)
+    multi method entries(IRC::Channel::Log:D:
+      Str:D :contains($text)!,
+            :conversation($),  # ignored
+            :control($),       # ignored
     ) {
         self.entries(|%_).grep: { .conversation && .text.contains($text) }
     }
-    multi method entries(IRC::Channel::Log:D:  # override :conversation and :control
-      :contains(@text)!, :$all, :conversation($), :control($)
+    multi method entries(IRC::Channel::Log:D:
+      :contains(@text)!,
+      :$all,
+      :conversation($),  # ignored
+      :control($),       # ignored
     ) {
         self.entries(|%_).grep: -> $entry {
             if $entry.conversation {
@@ -67,8 +87,10 @@ class IRC::Channel::Log:ver<0.0.1>:auth<cpan:ELIZABETH> {
     }
 
     # :matches post-processing filter
-    multi method entries(IRC::Channel::Log:D:  # override :conversation and :control
-      Regex:D :matches($regex)!, :conversation($), :control($)
+    multi method entries(IRC::Channel::Log:D:
+      Regex:D :matches($regex)!,
+              :conversation($),  # ignored
+              :control($),       # ignored
     ) {
         self.entries(|%_).grep: { .conversation && .text.contains($regex) }
     }
@@ -97,8 +119,8 @@ class IRC::Channel::Log:ver<0.0.1>:auth<cpan:ELIZABETH> {
     multi method entries(IRC::Channel::Log:D: :$dates!, :@nicks!) {
         @nicks == 1
           ?? %!nicks{@nicks[0]}{$dates<>}.map: { .Slip with $_ }
-          !! %!nicks{@nicks}{$dates<>}.map({ .Slip with $_ }).sort:
-               *.target
+          !! %!nicks{@nicks}{$dates<>}.map({ .Slip with $_ })
+               .sort: *.target
     }
     multi method entries(IRC::Channel::Log:D: :@dates!, :@nicks!) {
         @nicks == 1
@@ -109,10 +131,18 @@ class IRC::Channel::Log:ver<0.0.1>:auth<cpan:ELIZABETH> {
 
     # just :dates selection
     multi method entries(IRC::Channel::Log:D: :$dates!) {
-        %!logs{$dates<>}.map: { .entries.Slip with $_ }
+        $dates<>.map: -> $date {
+            with finds(@!dates, $date) -> $pos {
+                @!logs[$pos].entries.Slip
+            }
+        }
     }
     multi method entries(IRC::Channel::Log:D: :@dates!) {
-        %!logs{@dates.sort}.map: { .entries.Slip with $_ }
+        @dates.sort.map: -> $date {
+            with finds(@!dates, $date) -> $pos {
+                @!logs[$pos].entries.Slip
+            }
+        }
     }
 
     # just :nicks selection
@@ -129,9 +159,57 @@ class IRC::Channel::Log:ver<0.0.1>:auth<cpan:ELIZABETH> {
 
     # just all of them
     multi method entries(IRC::Channel::Log:D: ) {
-        @!dates.map: { %!logs{$_}.entries.Slip }
+        @!logs.map: *.entries.Slip
+    }
+
+#--------------------------------------------------------------------------------
+# Utility methods
+
+    method years() {
+        @!years ||= $!logdir.dir(:test(/ ^ \d ** 4 $ /)).map(*.basename).sort
+    }
+
+    method watch-and-update() {
+        start {
+            my $year := self.years.tail;
+
+            # outer loop in case we get to a new *year*
+            loop {
+                react {
+                    whenever $!logdir.watch {
+                        my $new := self.years.tail;
+                        if $new ne $year {
+                            $year := $new;
+                            done;
+                        }
+                    }
+                    whenever $!logdir.add($year).watch -> $event {
+                        my $path := $event.path.IO;
+                        if $path.f && $!class.IO2Date($path) -> $Date {
+                            my $date := $Date.Str;
+
+                            with finds(@!dates,$date) -> $pos {
+                                my $log := @!logs[$pos];
+                                $log.update($path);
+                                (%!nicks{.key} := {}){$date} := .value
+                                  unless %!nicks{.key}
+                                  for $log.nicks;
+                            }
+                            else {
+                                my $log := $!class.new($path, $date);
+                                inserts(@!dates, $date, @!logs, $log);
+                                %!nicks{.key}{$date} := .value for $log.nicks;
+                            }
+                        }
+                    }
+                }
+            }
+        }
     }
 }
+
+#-------------------------------------------------------------------------------
+# Documentation
 
 =begin pod
 
@@ -165,6 +243,8 @@ say $channel.problems.elems;    # hash with problems / date
   :starts-with<m:>,        # limit to starting with given text
   :matches(/ /d+ /),       # limit to matching regex
 );
+
+$channel.watch-and-update;  # watch and process updates
 
 =end code
 
@@ -405,6 +485,19 @@ there are entries available.
 The C<problems> instance method returns a sorted list of C<Pair>s with
 the date (formatted as YYYY-MM-DD) as key, and a list of problem
 descriptions as value.
+
+=head2 watch-and-update
+
+=begin code :lang<raku>
+
+$channel.watch-and-update;
+
+=end code
+
+The C<watch-and-update> instance method starts a threade (and returns its
+C<Promise> in which it watches for any updates in the most recent logs.
+If there are any updates, it will process them and make sure that all the
+internal state is correctly updated.
 
 =head1 AUTHOR
 

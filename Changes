@@ -2,5 +2,12 @@ Revision history for IRC-Channel-Log
 
 {{$NEXT}}
 
+0.0.2  2021-04-30T11:49:01+02:00
+    - Upped API dependency to 0.19 (introducing entries as IterationBuffers)
+    - Added dependency on Array::Sorted::Util
+    - Logs are now kept as a list, sorted with @!dates
+    - Added years attribute
+    - Added watch-and-update method
+
 0.0.1  2021-04-28T13:48:38+02:00
     - Initial version

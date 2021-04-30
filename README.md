@@ -31,6 +31,8 @@ say $channel.problems.elems;    # hash with problems / date
   :starts-with<m:>,        # limit to starting with given text
   :matches(/ /d+ /),       # limit to matching regex
 );
+
+$channel.watch-and-update;  # watch and process updates
 ```
 
 DESCRIPTION
@@ -221,6 +223,15 @@ problems
 ```
 
 The `problems` instance method returns a sorted list of `Pair`s with the date (formatted as YYYY-MM-DD) as key, and a list of problem descriptions as value.
+
+watch-and-update
+----------------
+
+```raku
+$channel.watch-and-update;
+```
+
+The `watch-and-update` instance method starts a threade (and returns its `Promise` in which it watches for any updates in the most recent logs. If there are any updates, it will process them and make sure that all the internal state is correctly updated.
 
 AUTHOR
 ======
