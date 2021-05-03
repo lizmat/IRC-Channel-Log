@@ -1,8 +1,9 @@
 use v6.*;
 
-use Array::Sorted::Util:ver<0.0.4>:auth<cpan:ELIZABETH>;
+use Array::Sorted::Util:ver<0.0.5>:auth<cpan:ELIZABETH>;
+use Object::Delayed:ver<0.0.10>:auth<cpan:ELIZABETH>;
 
-class IRC::Channel::Log:ver<0.0.2>:auth<cpan:ELIZABETH> {
+class IRC::Channel::Log:ver<0.0.3>:auth<cpan:ELIZABETH> {
     has IO() $.logdir is required;
     has Mu   $.class  is required;
     has str  $.name = $!logdir.basename;
@@ -13,9 +14,11 @@ class IRC::Channel::Log:ver<0.0.2>:auth<cpan:ELIZABETH> {
     has Mu   @!logs;
     has      %!nicks;
 
-    method TWEAK(:$batch = 4 --> Nil) {
+    method new(|c) { slack { self.bless(|c) } }
+
+    method TWEAK(:$batch = 6, :$degree = Kernel.cpu-cores --> Nil) {
         for $!logdir.dir.map(*.dir.Slip)
-          .race(:batch($batch || 1))
+          .race(:$batch, :$degree)
           .map(-> $path { $_ with $!class.new($path) }) -> $log {
 
             my $date := $log.date.Str;
@@ -38,7 +41,7 @@ class IRC::Channel::Log:ver<0.0.2>:auth<cpan:ELIZABETH> {
         @!nicks = %!nicks.keys.sort;
     }
 
-#--------------------------------------------------------------------------------
+#-------------------------------------------------------------------------------
 # Filters
 
     # :starts-with post-processing filters
@@ -162,7 +165,7 @@ class IRC::Channel::Log:ver<0.0.2>:auth<cpan:ELIZABETH> {
         @!logs.map: *.entries.Slip
     }
 
-#--------------------------------------------------------------------------------
+#-------------------------------------------------------------------------------
 # Utility methods
 
     method years() {
@@ -206,6 +209,9 @@ class IRC::Channel::Log:ver<0.0.2>:auth<cpan:ELIZABETH> {
             }
         }
     }
+
+    method next-date(str $date) { nexts(@!dates, $date) }
+    method prev-date(str $date) { prevs(@!dates, $date) }
 }
 
 #-------------------------------------------------------------------------------
@@ -267,11 +273,13 @@ my $channel = IRC::Channel::Log.new(
   class  => IRC::Log::Colabti,  # for example
   name   => "foobar",           # defaults to logdir.basename
   batch  => 1,                  # defaults to 6
+  degree => 8,                  # defaults to Kernel.cpu-cores
 );
 
 =end code
 
-The C<new> class method takes four named arguments:
+The C<new> class method returns a C<slack>ed object that will eventually
+become an C<IRC::Channel::Log> object.  It takes four named arguments:
 
 =head3 logdir
 
@@ -305,6 +313,12 @@ given channel.  Defaults to 6 as an apparent optimal values to optimize
 for wallclock and not have excessive CPU usage.  You can use C<:!batch>
 to indicate you do not want any multi-threading: this is equivalent to
 specifying C<1> or C<0> or C<True>.
+
+=head3 degree
+
+The maximum number of threads to be used when racing to read all of the
+log files of the given channel.  Defaults to C<Kernel.cpu-cores> (aka the
+number of CPU cores the system claims to have).
 
 =head1 INSTANCE METHODS
 
@@ -473,6 +487,18 @@ Since this only applies to conversational entries, any additional
 setting of the C<conversation> or C<control> named arguments are
 ignored.
 
+=head2 next-date
+
+=begin code :lang<raku>
+
+say $channel.next-date($date);  # log of the date after the given date
+
+=end code
+
+The C<next-date> instance method takes a string representing a date, and
+returns a string with the B<next> date of logs that are available.  Returns
+C<Nil> if the specified date is the last date or after that.
+
 =head2 nicks
 
 =begin code :lang<raku>
@@ -483,6 +509,18 @@ say $channel.nicks;          # the nicks for which there are logs available
 
 The C<nicks> instance method returns a sorted list of nicks of which
 there are entries available.
+
+=head2 prev-date
+
+=begin code :lang<raku>
+
+say $channel.prev-date($date);  # log of the date before the given date
+
+=end code
+
+The C<prev-date> instance method takes a string representing a date, and
+returns a string with the B<previous> date of logs that are available.
+Returns C<Nil> if the specified date is the first date or before that.
 
 =head2 problems
 
@@ -517,10 +555,11 @@ Elizabeth Mattijsen <liz@wenzperl.nl>
 
 Copyright 2021 Elizabeth Mattijsen
 
-Source can be located at: https://github.com/lizmat/IRC-Channel-Log . Comments and
-Pull Requests are welcome.
+Source can be located at: https://github.com/lizmat/IRC-Channel-Log .
+Comments and Pull Requests are welcome.
 
-This library is free software; you can redistribute it and/or modify it under the Artistic License 2.0.
+This library is free software; you can redistribute it and/or modify it
+under the Artistic License 2.0.
 
 =end pod
 

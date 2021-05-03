@@ -2,15 +2,15 @@ use Test;
 use IRC::Log::Colabti;
 use IRC::Channel::Log;
 
-plan 22;
+plan 26;
 
-my $channel := IRC::Channel::Log.new(
+my $channel = IRC::Channel::Log.new(
   logdir => $?FILE.IO.sibling('raku'),
   class  => IRC::Log::Colabti,
 );
-isa-ok $channel, IRC::Channel::Log;
 is $channel.problems.elems, 0,
   'there should be no problems';
+isa-ok $channel, IRC::Channel::Log;
 
 my @dates = $channel.dates;
 is +@dates, 2, 'did we get 2 dates';
@@ -56,5 +56,11 @@ is $channel.entries(:contains<question answer>, :all).elems, 2,
 
 is $channel.entries(:matches(/ [^ | \s+] \d\d+ [\s+ | $] /)).elems, 9,
   'correct number of whitespaced multi-digit numbers';
+
+is $channel.next-date('2021-04-23'), '2021-04-24', 'did we get next date';
+is-deeply $channel.next-date('2021-04-24'), Nil, 'is last date handled ok';
+
+is $channel.prev-date('2021-04-24'), '2021-04-23', 'did we get previous date';
+is-deeply $channel.prev-date('2021-04-23'), Nil, 'is first date handled ok';
 
 # vim: expandtab shiftwidth=4

@@ -53,10 +53,13 @@ use IRC::Channel::Log;
 my $channel = IRC::Channel::Log.new(
   logdir => "logs/raku",        # directory containing logs
   class  => IRC::Log::Colabti,  # for example
+  name   => "foobar",           # defaults to logdir.basename
+  batch  => 1,                  # defaults to 6
+  degree => 8,                  # defaults to Kernel.cpu-cores
 );
 ```
 
-The `new` class method takes three named arguments:
+The `new` class method returns a `slack`ed object that will eventually become an `IRC::Channel::Log` object. It takes four named arguments:
 
 ### logdir
 
@@ -76,6 +79,14 @@ The class to be used to interpret log files, e.g. `IRC::Log::Colabti`. This argu
 ### name
 
 The name of the channel. Optional. Defaults to the base name of the directory specified with `logdir`.
+
+### batch
+
+The batch size to use when racing to read all of the log files of the given channel. Defaults to 6 as an apparent optimal values to optimize for wallclock and not have excessive CPU usage. You can use `:!batch` to indicate you do not want any multi-threading: this is equivalent to specifying `1` or `0` or `True`.
+
+### degree
+
+The maximum number of threads to be used when racing to read all of the log files of the given channel. Defaults to `Kernel.cpu-cores` (aka the number of CPU cores the system claims to have).
 
 INSTANCE METHODS
 ================
@@ -206,6 +217,15 @@ The `start-with` named argument allows specification of one or more strings that
 
 Since this only applies to conversational entries, any additional setting of the `conversation` or `control` named arguments are ignored.
 
+next-date
+---------
+
+```raku
+say $channel.next-date($date);  # log of the date after the given date
+```
+
+The `next-date` instance method takes a string representing a date, and returns a string with the **next** date of logs that are available. Returns `Nil` if the specified date is the last date or after that.
+
 nicks
 -----
 
@@ -214,6 +234,15 @@ say $channel.nicks;          # the nicks for which there are logs available
 ```
 
 The `nicks` instance method returns a sorted list of nicks of which there are entries available.
+
+prev-date
+---------
+
+```raku
+say $channel.prev-date($date);  # log of the date before the given date
+```
+
+The `prev-date` instance method takes a string representing a date, and returns a string with the **previous** date of logs that are available. Returns `Nil` if the specified date is the first date or before that.
 
 problems
 --------
