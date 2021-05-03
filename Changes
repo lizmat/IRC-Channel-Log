@@ -2,6 +2,9 @@ Revision history for IRC-Channel-Log
 
 {{$NEXT}}
 
+0.0.4  2021-05-03T11:09:48+02:00
+    - .new now returns a catchupped object, duh!
+
 0.0.3  2021-05-03T11:06:04+02:00
     - Add .next-date / .prev-date methods
     - Add support for :batch and :degree with .new
