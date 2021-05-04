@@ -3,7 +3,7 @@ use v6.*;
 use Array::Sorted::Util:ver<0.0.5>:auth<cpan:ELIZABETH>;
 use Object::Delayed:ver<0.0.10>:auth<cpan:ELIZABETH>;
 
-class IRC::Channel::Log:ver<0.0.4>:auth<cpan:ELIZABETH> {
+class IRC::Channel::Log:ver<0.0.5>:auth<cpan:ELIZABETH> {
     has IO() $.logdir is required;
     has Mu   $.class  is required;
     has str  $.name = $!logdir.basename;
@@ -210,6 +210,14 @@ class IRC::Channel::Log:ver<0.0.4>:auth<cpan:ELIZABETH> {
         }
     }
 
+    method this-date(str $date) {
+        with finds(@!dates, $date) -> $pos {
+            $date
+        }
+        else {
+            nexts(@!dates, $date) // prevs(@!dates, $date)
+        }
+    }
     method next-date(str $date) { nexts(@!dates, $date) }
     method prev-date(str $date) { prevs(@!dates, $date) }
 }
@@ -491,7 +499,7 @@ ignored.
 
 =begin code :lang<raku>
 
-say $channel.next-date($date);  # log of the date after the given date
+say $channel.next-date($date);  # date after the given date with a log
 
 =end code
 
@@ -514,7 +522,7 @@ there are entries available.
 
 =begin code :lang<raku>
 
-say $channel.prev-date($date);  # log of the date before the given date
+say $channel.prev-date($date);  # date before the given date with a log
 
 =end code
 
@@ -533,6 +541,20 @@ Returns C<Nil> if the specified date is the first date or before that.
 The C<problems> instance method returns a sorted list of C<Pair>s with
 the date (formatted as YYYY-MM-DD) as key, and a list of problem
 descriptions as value.
+
+=head2 this-date
+
+=begin code :lang<raku>
+
+say $channel.this-date($date);  # date after / before the given date
+
+=end code
+
+The C<this-date> instance method takes a string representing a date, and
+returns a string with the B<first> date of logs that are available.  This
+could be either the given date, or the next date, or the previous date
+(if there was no next date).  Returns C<Nil> if no dates could be found,
+which would effectively mean that there are B<no> dates in the log.
 
 =head2 watch-and-update
 

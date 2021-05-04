@@ -2,6 +2,9 @@ Revision history for IRC-Channel-Log
 
 {{$NEXT}}
 
+0.0.5  2021-05-04T20:55:14+02:00
+    - Add support for .this-date method
+
 0.0.4  2021-05-03T11:09:48+02:00
     - .new now returns a catchupped object, duh!
 

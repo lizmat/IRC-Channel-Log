@@ -2,7 +2,7 @@ use Test;
 use IRC::Log::Colabti;
 use IRC::Channel::Log;
 
-plan 26;
+plan 29;
 
 my $channel = IRC::Channel::Log.new(
   logdir => $?FILE.IO.sibling('raku'),
@@ -56,6 +56,10 @@ is $channel.entries(:contains<question answer>, :all).elems, 2,
 
 is $channel.entries(:matches(/ [^ | \s+] \d\d+ [\s+ | $] /)).elems, 9,
   'correct number of whitespaced multi-digit numbers';
+
+is $channel.this-date('2021-04-23'), '2021-04-23', 'did we get this date';
+is $channel.this-date('2021-04-22'), '2021-04-23', 'did we get next date';
+is $channel.this-date('2021-04-25'), '2021-04-24', 'did we get previous date';
 
 is $channel.next-date('2021-04-23'), '2021-04-24', 'did we get next date';
 is-deeply $channel.next-date('2021-04-24'), Nil, 'is last date handled ok';

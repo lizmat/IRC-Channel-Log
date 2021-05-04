@@ -221,7 +221,7 @@ next-date
 ---------
 
 ```raku
-say $channel.next-date($date);  # log of the date after the given date
+say $channel.next-date($date);  # date after the given date with a log
 ```
 
 The `next-date` instance method takes a string representing a date, and returns a string with the **next** date of logs that are available. Returns `Nil` if the specified date is the last date or after that.
@@ -239,7 +239,7 @@ prev-date
 ---------
 
 ```raku
-say $channel.prev-date($date);  # log of the date before the given date
+say $channel.prev-date($date);  # date before the given date with a log
 ```
 
 The `prev-date` instance method takes a string representing a date, and returns a string with the **previous** date of logs that are available. Returns `Nil` if the specified date is the first date or before that.
@@ -252,6 +252,15 @@ problems
 ```
 
 The `problems` instance method returns a sorted list of `Pair`s with the date (formatted as YYYY-MM-DD) as key, and a list of problem descriptions as value.
+
+this-date
+---------
+
+```raku
+say $channel.this-date($date);  # date after / before the given date
+```
+
+The `this-date` instance method takes a string representing a date, and returns a string with the **first** date of logs that are available. This could be either the given date, or the next date, or the previous date (if there was no next date). Returns `Nil` if no dates could be found, which would effectively mean that there are **no** dates in the log.
 
 watch-and-update
 ----------------
