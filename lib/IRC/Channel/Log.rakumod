@@ -3,7 +3,7 @@ use v6.*;
 use Array::Sorted::Util:ver<0.0.5>:auth<cpan:ELIZABETH>;
 use Object::Delayed:ver<0.0.10>:auth<cpan:ELIZABETH>;
 
-class IRC::Channel::Log:ver<0.0.5>:auth<cpan:ELIZABETH> {
+class IRC::Channel::Log:ver<0.0.6>:auth<cpan:ELIZABETH> {
     has IO() $.logdir is required;
     has Mu   $.class  is required;
     has str  $.name = $!logdir.basename;
@@ -220,6 +220,15 @@ class IRC::Channel::Log:ver<0.0.5>:auth<cpan:ELIZABETH> {
     }
     method next-date(str $date) { nexts(@!dates, $date) }
     method prev-date(str $date) { prevs(@!dates, $date) }
+
+    method log(str $date) {
+        with finds(@!dates, $date) -> $pos {
+            @!logs[$pos]
+        }
+        else {
+            Nil
+        }
+    }
 }
 
 #-------------------------------------------------------------------------------
@@ -494,6 +503,18 @@ strings that an entry should start with.
 Since this only applies to conversational entries, any additional
 setting of the C<conversation> or C<control> named arguments are
 ignored.
+
+=head2 log
+
+=begin code :lang<raku>
+
+say $channel.log($date);  # log object for given date
+
+=end code
+
+The C<log> instance method takes a string representing a date, and returns
+the C<class> object for that given date.  Returns C<Nil> if there is no
+log available on the specified date.
 
 =head2 next-date
 

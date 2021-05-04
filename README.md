@@ -217,6 +217,15 @@ The `start-with` named argument allows specification of one or more strings that
 
 Since this only applies to conversational entries, any additional setting of the `conversation` or `control` named arguments are ignored.
 
+log
+---
+
+```raku
+say $channel.log($date);  # log object for given date
+```
+
+The `log` instance method takes a string representing a date, and returns the `class` object for that given date. Returns `Nil` if there is no log available on the specified date.
+
 next-date
 ---------
 
