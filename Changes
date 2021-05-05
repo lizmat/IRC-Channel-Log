@@ -2,6 +2,9 @@ Revision history for IRC-Channel-Log
 
 {{$NEXT}}
 
+0.0.8  2021-05-05T15:11:03+02:00
+    - Add is-first-date-in-(month|year) methods
+
 0.0.7  2021-05-05T11:49:43+02:00
     - Removed Object::Delayed functionality: if a client wants to do
       stuff in an async fashion, it's *their* responsibility to do so

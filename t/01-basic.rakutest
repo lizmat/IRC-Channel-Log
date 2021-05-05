@@ -2,7 +2,7 @@ use Test;
 use IRC::Log::Colabti;
 use IRC::Channel::Log;
 
-plan 31;
+plan 35;
 
 my $channel = IRC::Channel::Log.new(
   logdir => $?FILE.IO.sibling('raku'),
@@ -69,5 +69,10 @@ is-deeply $channel.prev-date('2021-04-23'), Nil, 'is first date handled ok';
 
 isa-ok $channel.log('2021-04-23'), IRC::Log::Colabti;
 is-deeply $channel.log('2021-04-25'), Nil, 'no log on 2021-04-25';
+
+ok $channel.is-first-date-of-month('2021-04-23'),  'first date in month ok';
+ok $channel.is-first-date-of-year('2021-04-23'),   'first date in year ok';
+nok $channel.is-first-date-of-month('2021-04-24'), 'first date in month nok';
+nok $channel.is-first-date-of-year('2021-04-24'),  'first date in year nok';
 
 # vim: expandtab shiftwidth=4

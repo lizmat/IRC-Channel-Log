@@ -2,7 +2,7 @@ use v6.*;
 
 use Array::Sorted::Util:ver<0.0.5>:auth<cpan:ELIZABETH>;
 
-class IRC::Channel::Log:ver<0.0.7>:auth<cpan:ELIZABETH> {
+class IRC::Channel::Log:ver<0.0.8>:auth<cpan:ELIZABETH> {
     has IO() $.logdir is required;
     has Mu   $.class  is required;
     has str  $.name = $!logdir.basename;
@@ -224,6 +224,35 @@ class IRC::Channel::Log:ver<0.0.7>:auth<cpan:ELIZABETH> {
         }
         else {
             Nil
+        }
+    }
+
+    method is-first-date-of-month(Str() $date) {
+        if $date.ends-with('-01') {
+            True
+        }
+        else {
+            my $pos := finds(@!dates, $date);
+            if $pos > 0 {
+                @!dates[$pos - 1].substr(0,7) ne $date.substr(0,7)
+            }
+            else {
+                True
+            }
+        }
+    }
+    method is-first-date-of-year(Str() $date) {
+        if $date.ends-with('-01-01') {
+            True
+        }
+        else {
+            my $pos := finds(@!dates, $date);
+            if $pos > 0 {
+                @!dates[$pos - 1].substr(0,4) ne $date.substr(0,4)
+            }
+            else {
+                True
+            }
         }
     }
 }
@@ -500,6 +529,30 @@ strings that an entry should start with.
 Since this only applies to conversational entries, any additional
 setting of the C<conversation> or C<control> named arguments are
 ignored.
+
+=head2 is-first-date-of-month
+
+=begin code :lang<raku>
+
+say $channel.is-first-date-of-month($date);
+
+=end code
+
+The C<is-first-date-of-month> instance method takes a date (either as a
+C<Date> object or as astring) and returns whether that date is the
+first date of the month, according to availability in the logs.
+
+=head2 is-first-date-of-year
+
+=begin code :lang<raku>
+
+say $channel.is-first-date-of-year($date);
+
+=end code
+
+The C<is-first-date-of-month> instance method takes a date (either as a
+C<Date> object or as astring) and returns whether that date is the first
+date of the year, according to availability in the logs.
 
 =head2 log
 

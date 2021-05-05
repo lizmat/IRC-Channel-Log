@@ -217,6 +217,24 @@ The `start-with` named argument allows specification of one or more strings that
 
 Since this only applies to conversational entries, any additional setting of the `conversation` or `control` named arguments are ignored.
 
+is-first-date-of-month
+----------------------
+
+```raku
+say $channel.is-first-date-of-month($date);
+```
+
+The `is-first-date-of-month` instance method takes a date (either as a `Date` object or as astring) and returns whether that date is the first date of the month, according to availability in the logs.
+
+is-first-date-of-year
+---------------------
+
+```raku
+say $channel.is-first-date-of-year($date);
+```
+
+The `is-first-date-of-month` instance method takes a date (either as a `Date` object or as astring) and returns whether that date is the first date of the year, according to availability in the logs.
+
 log
 ---
 
