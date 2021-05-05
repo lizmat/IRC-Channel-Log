@@ -59,7 +59,7 @@ my $channel = IRC::Channel::Log.new(
 );
 ```
 
-The `new` class method returns a `catchup`ped object that will eventually become an `IRC::Channel::Log` object. It takes four named arguments:
+The `new` class method returns an `IRC::Channel::Log` object. It takes four named arguments:
 
 ### logdir
 

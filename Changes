@@ -2,6 +2,10 @@ Revision history for IRC-Channel-Log
 
 {{$NEXT}}
 
+0.0.7  2021-05-05T11:49:43+02:00
+    - Removed Object::Delayed functionality: if a client wants to do
+      stuff in an async fashion, it's *their* responsibility to do so
+
 0.0.6  2021-05-04T21:15:30+02:00
     - Add support for .log method
 

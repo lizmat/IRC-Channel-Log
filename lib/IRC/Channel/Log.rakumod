@@ -1,9 +1,8 @@
 use v6.*;
 
 use Array::Sorted::Util:ver<0.0.5>:auth<cpan:ELIZABETH>;
-use Object::Delayed:ver<0.0.10>:auth<cpan:ELIZABETH>;
 
-class IRC::Channel::Log:ver<0.0.6>:auth<cpan:ELIZABETH> {
+class IRC::Channel::Log:ver<0.0.7>:auth<cpan:ELIZABETH> {
     has IO() $.logdir is required;
     has Mu   $.class  is required;
     has str  $.name = $!logdir.basename;
@@ -13,8 +12,6 @@ class IRC::Channel::Log:ver<0.0.6>:auth<cpan:ELIZABETH> {
     has      @.problems is built(False);
     has Mu   @!logs;
     has      %!nicks;
-
-    method new(|c) { catchup { self.bless(|c) } }
 
     method TWEAK(:$batch = 6, :$degree = Kernel.cpu-cores --> Nil) {
         for $!logdir.dir.map(*.dir.Slip)
@@ -295,8 +292,8 @@ my $channel = IRC::Channel::Log.new(
 
 =end code
 
-The C<new> class method returns a C<catchup>ped object that will eventually
-become an C<IRC::Channel::Log> object.  It takes four named arguments:
+The C<new> class method returns an C<IRC::Channel::Log> object.  It takes
+four named arguments:
 
 =head3 logdir
 
