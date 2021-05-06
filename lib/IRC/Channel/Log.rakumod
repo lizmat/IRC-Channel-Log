@@ -1,8 +1,8 @@
 use v6.*;
 
-use Array::Sorted::Util:ver<0.0.5>:auth<cpan:ELIZABETH>;
+use Array::Sorted::Util:ver<0.0.6>:auth<cpan:ELIZABETH>;
 
-class IRC::Channel::Log:ver<0.0.8>:auth<cpan:ELIZABETH> {
+class IRC::Channel::Log:ver<0.0.9>:auth<cpan:ELIZABETH> {
     has IO() $.logdir is required;
     has Mu   $.class  is required;
     has str  $.name = $!logdir.basename;

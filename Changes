@@ -1,9 +1,10 @@
 Revision history for IRC-Channel-Log
 
 {{$NEXT}}
+    - Up dependency on Array::Sorted::Util to fix race condition
 
 0.0.8  2021-05-05T15:11:03+02:00
-    - Add is-first-date-in-(month|year) methods
+    - Add is-first-date-of-(month|year) methods
 
 0.0.7  2021-05-05T11:49:43+02:00
     - Removed Object::Delayed functionality: if a client wants to do
