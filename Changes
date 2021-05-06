@@ -1,7 +1,10 @@
 Revision history for IRC-Channel-Log
 
 {{$NEXT}}
+
+0.0.9  2021-05-06T13:21:45+02:00
     - Up dependency on Array::Sorted::Util to fix race condition
+    - Up dependency of IRC::Log::Colabti for testing
 
 0.0.8  2021-05-05T15:11:03+02:00
     - Add is-first-date-of-(month|year) methods
