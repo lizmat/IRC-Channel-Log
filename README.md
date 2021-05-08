@@ -23,16 +23,18 @@ say $channel.problems.elems;    # hash with problems / date
 .say for $channel.entries;      # all entries of this channel
 
 .say for $channel.entries(
-  :conversation,           # only return conversational messages
-  :control,                # only return control messages
-  :dates<2021-04-23>,      # limit to given date(s)
-  :nicks<lizmat japhb>,    # limit to given nick(s)
-  :contains<foo>,          # limit to containing given text
-  :starts-with<m:>,        # limit to starting with given text
-  :matches(/ /d+ /),       # limit to matching regex
+  :conversation,         # only return conversational messages
+  :control,              # only return control messages
+  :dates<2021-04-23>,    # limit to given date(s)
+  :nicks<lizmat japhb>,  # limit to given nick(s)
+  :contains<foo>,        # limit to containing given text
+  :starts-with<m:>,      # limit to starting with given text
+  :matches(/ /d+ /),     # limit to matching regex
 );
 
 $channel.watch-and-update;  # watch and process updates
+
+$channel.shutdown;          # perform all necessary actions on shutdown
 ```
 
 DESCRIPTION
@@ -52,10 +54,12 @@ use IRC::Channel::Log;
 
 my $channel = IRC::Channel::Log.new(
   logdir => "logs/raku",        # directory containing logs
-  class  => IRC::Log::Colabti,  # for example
-  name   => "foobar",           # defaults to logdir.basename
-  batch  => 1,                  # defaults to 6
-  degree => 8,                  # defaults to Kernel.cpu-cores
+  state  => "state",            # directory containing persistent state info
+  class  => IRC::Log::Colabti,  # class implementing log parsing logic
+  sc     => String::Color.new,  # optional String::Color object for mapping
+  name   => "foobar",           # name of channel, default: logdir.basename
+  batch  => 1,                  # number of logs parsed at a time, default: 6
+  degree => 8,                  # nr of threads used, default: Kernel.cpu-cores
 );
 ```
 
@@ -72,21 +76,25 @@ The directory (either as a string or as an `IO::Path` object) in which log file 
 
 This argument is required.
 
-### class
-
-The class to be used to interpret log files, e.g. `IRC::Log::Colabti`. This argument is also required.
-
-### name
-
-The name of the channel. Optional. Defaults to the base name of the directory specified with `logdir`.
-
-### batch
+### :batch
 
 The batch size to use when racing to read all of the log files of the given channel. Defaults to 6 as an apparent optimal values to optimize for wallclock and not have excessive CPU usage. You can use `:!batch` to indicate you do not want any multi-threading: this is equivalent to specifying `1` or `0` or `True`.
 
-### degree
+### :class
+
+The class to be used to interpret log files, e.g. `IRC::Log::Colabti`. This argument is also required.
+
+### :degree
 
 The maximum number of threads to be used when racing to read all of the log files of the given channel. Defaults to `Kernel.cpu-cores` (aka the number of CPU cores the system claims to have).
+
+### :name
+
+The name of the channel. Optional. Defaults to the base name of the directory specified with `logdir`.
+
+### :state
+
+The directory (either as a string or as an `IO::Path` object) in which persistent state information of the channel is located.
 
 INSTANCE METHODS
 ================
@@ -279,6 +287,33 @@ problems
 ```
 
 The `problems` instance method returns a sorted list of `Pair`s with the date (formatted as YYYY-MM-DD) as key, and a list of problem descriptions as value.
+
+sc
+--
+
+```raku
+say "$channel.sc.elems() nick to color mappings are known";
+```
+
+The `String::Color` object that contains the mapping of nick to color.
+
+shutdown
+--------
+
+```raku
+$channel.shutdown;
+```
+
+Performs all the actions needed to shutdown: specifically saves the nick to color mapping if a `state` directory was specified.
+
+state
+-----
+
+```raku
+say "state is saved in $channel.state()";
+```
+
+The `IO` object of the directory in which persistent state will be saved.
 
 this-date
 ---------

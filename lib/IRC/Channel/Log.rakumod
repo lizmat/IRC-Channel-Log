@@ -25,7 +25,7 @@ class IRC::Channel::Log:ver<0.0.10>:auth<cpan:ELIZABETH> {
 
     # IO for file containing persistent color information
     method !colors-json() {
-        $!state ?? $!state.add("$!name.colors.json") !! Nil
+        $!state ?? $!state.add("colors.json") !! Nil
     }
 
     method TWEAK(
