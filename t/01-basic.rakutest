@@ -2,7 +2,7 @@ use Test;
 use IRC::Log::Colabti;
 use IRC::Channel::Log;
 
-plan 36;
+plan 38;
 
 my $logdir := $?FILE.IO.sibling('raku');
 my $state  := $?FILE.IO.sibling('state');
@@ -32,6 +32,12 @@ is $channel.entries(:control).elems, 766,
   'did we get correct number of control messages';
 is $channel.entries(:conversation).elems, 463,
   'did we get correct number of  messages';
+
+my %nick-mapped := $channel.nick-mapped;
+ok %nick-mapped<vrurg>.starts-with('<span style="color: #'),
+  'Did it HTMLize correctly (1)';
+ok %nick-mapped<vrurg>.ends-with('">vrurg</span>'),
+  'Did it HTMLize correctly (2)';
 
 is $channel.entries(:nicks<lizmat>).elems, 118,
   'did we get correct number of entries by lizmat';

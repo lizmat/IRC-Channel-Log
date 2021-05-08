@@ -9,7 +9,7 @@
     "Array::Sorted::Util:ver<0.0.6>:auth<cpan:ELIZABETH>",
     "JSON::Fast:ver<0.15>",
     "RandomColor",
-    "String::Color:ver<0.0.5>:auth<cpan:ELIZBATH>"
+    "String::Color:ver<0.0.5>:auth<cpan:ELIZABETH>"
   ],
   "description": "access to all logs of an IRC channel",
   "license": "Artistic-2.0",

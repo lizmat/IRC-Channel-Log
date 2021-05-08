@@ -10,24 +10,33 @@ sub generator($) {
     RandomColor.new(:luminosity<bright>).list.head
 }
 
+# Default nick / color mapper
+sub nick-mapper(str $nick, str $color) {
+    '<span style="color: ' ~ $color ~ '">' ~ $nick ~ '</span>'
+}
+
 class IRC::Channel::Log:ver<0.0.10>:auth<cpan:ELIZABETH> {
-    has IO() $.logdir is required is built(:bind);
-    has Mu   $.class  is required is built(:bind);
-    has IO() $.state              is built(:bind);
+    has IO() $.logdir         is required is built(:bind);
+    has Mu   $.class          is required is built(:bind);
+    has IO() $.state                      is built(:bind);
+    has      &!nick-mapper is built(:bind) = &nick-mapper;
     has str  $.name = $!logdir.basename;
     has String::Color $.sc is built(False);
     has str  @.dates       is built(False);
     has str  @.years       is built(False);
     has      @.problems    is built(False);
-    has int $!update-colors;
-    has @!logs;
-    has %!nicks;
+    has int  $!update-colors;
+    has      @!logs;
+    has      %!nicks;
+    has Lock $!nick-mapped-lock;
+    has      %!nick-mapped;
 
     # IO for file containing persistent color information
     method !colors-json() {
         $!state ?? $!state.add("colors.json") !! Nil
     }
 
+    # Not done creating the object yet
     method TWEAK(
       :$batch = 6,
       :$degree = Kernel.cpu-cores,
@@ -73,6 +82,10 @@ class IRC::Channel::Log:ver<0.0.10>:auth<cpan:ELIZABETH> {
             $!sc.add: %!nicks.keys;
             $!update-colors = 1;
         }
+
+        # Set up the HTML nick mapper
+        $!nick-mapped-lock := Lock.new;
+        %!nick-mapped      := $!sc.Map(&!nick-mapper);
     }
 
 #-------------------------------------------------------------------------------
@@ -211,9 +224,11 @@ class IRC::Channel::Log:ver<0.0.10>:auth<cpan:ELIZABETH> {
         start {
             my $year := self.years.tail;
 
-            # outer loop in case we get to a new *year*
+            # Outer loop in case we get to a new *year*
             loop {
                 react {
+
+                    # Moved into a new year
                     whenever $!logdir.watch {
                         my $new := self.years.tail;
                         if $new ne $year {
@@ -221,22 +236,39 @@ class IRC::Channel::Log:ver<0.0.10>:auth<cpan:ELIZABETH> {
                             done;
                         }
                     }
+
+                    # A log file has changed 
                     whenever $!logdir.add($year).watch -> $event {
                         my $path := $event.path.IO;
                         if $path.f && $!class.IO2Date($path) -> $Date {
                             my $date := $Date.Str;
 
+                            # A date for which we have data already
+                            my $log;
                             with finds(@!dates,$date) -> $pos {
-                                my $log := @!logs[$pos];
+                                $log := @!logs[$pos];
                                 $log.update($path);
                                 (%!nicks{.key} := {}){$date} := .value
                                   unless %!nicks{.key}
                                   for $log.nicks;
                             }
+
+                            # A new date
                             else {
-                                my $log := $!class.new($path, $date);
+                                $log := $!class.new($path, $date);
                                 inserts(@!dates, $date, @!logs, $log);
                                 %!nicks{.key}{$date} := .value for $log.nicks;
+                            }
+
+                            # Create mappings for new nicks
+                            if $!sc.add($log.nicks) -> @add {
+                                $!update-colors = 1;
+                                $!nick-mapped-lock.protect: {
+                                    for @add -> (:key($nick), :value($color)) {
+                                        %!nick-mapped{$nick} :=
+                                          &!nick-mapper($nick, $color);
+                                    }
+                                }
                             }
                         }
                     }
@@ -245,21 +277,41 @@ class IRC::Channel::Log:ver<0.0.10>:auth<cpan:ELIZABETH> {
         }
     }
 
+    # Method to return a thread-safe copy of the %!nick-mapped hash.
+    method nick-mapped(IRC::Channel::Log:D:) {
+        $!nick-mapped-lock.protect: {
+            use nqp;
+            nqp::p6bindattrinvres(
+              nqp::create(Map),Map,'$!storage',nqp::clone(
+                nqp::getattr(%!nick-mapped,Map,'$!storage')
+              )
+            )
+        }
+    }
+
+    # Return the closest date for a given date.  If there is no log
+    # for that date, then first look forward in time.  If that fails,
+    # look backward in time: should always return some date in a non-empty
+    # log.
     method this-date(IRC::Channel::Log:D: str $date) {
-        with finds(@!dates, $date) -> $pos {
+        with finds(@!dates, $date) {
             $date
         }
         else {
             nexts(@!dates, $date) // prevs(@!dates, $date)
         }
     }
+
+    # Return the next date for a given date for which there is a log
     method next-date(IRC::Channel::Log:D: str $date) {
         nexts(@!dates, $date)
     }
+    # Return the previous date for a given date for which there is a log
     method prev-date(IRC::Channel::Log:D: str $date) {
         prevs(@!dates, $date)
     }
 
+    # Return the log for the given date, if any
     method log(IRC::Channel::Log:D: str $date) {
         with finds(@!dates, $date) -> $pos {
             @!logs[$pos]
@@ -269,6 +321,8 @@ class IRC::Channel::Log:ver<0.0.10>:auth<cpan:ELIZABETH> {
         }
     }
 
+    # Return whether the given date is the first date of the month
+    # judging by availability.
     method is-first-date-of-month(IRC::Channel::Log:D: str $date --> Bool:D) {
         if $date.ends-with('-01') {
             True
@@ -283,6 +337,9 @@ class IRC::Channel::Log:ver<0.0.10>:auth<cpan:ELIZABETH> {
             }
         }
     }
+
+    # Return whether the given date is the first date of the year
+    # judging by availability.
     method is-first-date-of-year(IRC::Channel::Log:D: $date --> Bool:D) {
         if $date.ends-with('-01-01') {
             True
@@ -298,6 +355,7 @@ class IRC::Channel::Log:ver<0.0.10>:auth<cpan:ELIZABETH> {
         }
     }
 
+    # Perform all of the necessary shutdown work
     method shutdown(IRC::Channel::Log:D: --> Nil) {
         self!colors-json.spurt: to-json $!sc.Map, :!pretty
           if $!update-colors;
@@ -375,7 +433,7 @@ my $channel = IRC::Channel::Log.new(
 The C<new> class method returns an C<IRC::Channel::Log> object.  It takes
 four named arguments:
 
-=head3 logdir
+=head3 :logdir
 
 The directory (either as a string or as an C<IO::Path> object) in which
 log file of the channel is located, as created by a logger such as
@@ -413,6 +471,11 @@ number of CPU cores the system claims to have).
 
 The name of the channel.  Optional.  Defaults to the base name of the
 directory specified with C<logdir>.
+
+=head3 :nick-mapper
+
+A C<Callable> that should take a nick and a color, and create a HTML mapping
+for that.  Optional.  A default mapper is provided.
 
 =head3 :state
 
@@ -634,6 +697,19 @@ The C<next-date> instance method takes a string representing a date, and
 returns a string with the B<next> date of logs that are available.  Returns
 C<Nil> if the specified date is the last date or after that.
 
+=head2 nick-mapped
+
+=begin code :lang<raku>
+
+my %mapped := $channel.nick-mapped;  # thread-safe hash copy
+say %mapped<liz>;  # <span style="color: #deadbeef">liz</span>
+
+=end code
+
+The C<nick-mapped> instance method returns a C<Map> of all nicks and their
+C<nick-mapped> HTML in a thread-safe manner (as new nicks B<can> be added
+during the lifetime of the process).
+
 =head2 nicks
 
 =begin code :lang<raku>
@@ -722,7 +798,7 @@ $channel.watch-and-update;
 
 =end code
 
-The C<watch-and-update> instance method starts a threade (and returns its
+The C<watch-and-update> instance method starts a thread (and returns its
 C<Promise> in which it watches for any updates in the most recent logs.
 If there are any updates, it will process them and make sure that all the
 internal state is correctly updated.

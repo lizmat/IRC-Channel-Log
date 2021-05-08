@@ -1,9 +1,13 @@
 Revision history for IRC-Channel-Log
 
 {{$NEXT}}
+
+0.0.10  2021-05-08T23:53:22+02:00
     - Added dependencies on JSON::Fast, RandomColor, String::Color
     = Added "state" named argument to specify directory to keep state
     - Added "sc" named argument to use specific String::Color instance
+    - Added "nick-mapper" named argument to specify nick color representation
+    - Added "nick-mapped" method to thread-safe copy of nick to HTML mapping
     - Added "shutdown" method to save state.
     - Added "sc" method to return String::Color instance being used
 

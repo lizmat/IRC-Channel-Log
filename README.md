@@ -65,7 +65,7 @@ my $channel = IRC::Channel::Log.new(
 
 The `new` class method returns an `IRC::Channel::Log` object. It takes four named arguments:
 
-### logdir
+### :logdir
 
 The directory (either as a string or as an `IO::Path` object) in which log file of the channel is located, as created by a logger such as `IRC::Client::Plugin::Logger`. This expects the directories to be organized by year, with all the logs of each day of a year in that directory. For example, in the test of this module:
 
@@ -91,6 +91,10 @@ The maximum number of threads to be used when racing to read all of the log file
 ### :name
 
 The name of the channel. Optional. Defaults to the base name of the directory specified with `logdir`.
+
+### :nick-mapper
+
+A `Callable` that should take a nick and a color, and create a HTML mapping for that. Optional. A default mapper is provided.
 
 ### :state
 
@@ -261,6 +265,16 @@ say $channel.next-date($date);  # date after the given date with a log
 
 The `next-date` instance method takes a string representing a date, and returns a string with the **next** date of logs that are available. Returns `Nil` if the specified date is the last date or after that.
 
+nick-mapped
+-----------
+
+```raku
+my %mapped := $channel.nick-mapped;  # thread-safe hash copy
+say %mapped<liz>;  # <span style="color: #deadbeef">liz</span>
+```
+
+The `nick-mapped` instance method returns a `Map` of all nicks and their `nick-mapped` HTML in a thread-safe manner (as new nicks **can** be added during the lifetime of the process).
+
 nicks
 -----
 
@@ -331,7 +345,7 @@ watch-and-update
 $channel.watch-and-update;
 ```
 
-The `watch-and-update` instance method starts a threade (and returns its `Promise` in which it watches for any updates in the most recent logs. If there are any updates, it will process them and make sure that all the internal state is correctly updated.
+The `watch-and-update` instance method starts a thread (and returns its `Promise` in which it watches for any updates in the most recent logs. If there are any updates, it will process them and make sure that all the internal state is correctly updated.
 
 AUTHOR
 ======
