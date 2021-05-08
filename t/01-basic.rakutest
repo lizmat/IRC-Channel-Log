@@ -2,12 +2,13 @@ use Test;
 use IRC::Log::Colabti;
 use IRC::Channel::Log;
 
-plan 35;
+plan 36;
 
-my $channel = IRC::Channel::Log.new(
-  logdir => $?FILE.IO.sibling('raku'),
-  class  => IRC::Log::Colabti,
-);
+my $logdir := $?FILE.IO.sibling('raku');
+my $state  := $?FILE.IO.sibling('state');
+my $class  := IRC::Log::Colabti;
+
+my $channel = IRC::Channel::Log.new(:$logdir, :$state, :$class);
 is $channel.problems.elems, 0,
   'there should be no problems';
 isa-ok $channel, IRC::Channel::Log;
@@ -21,8 +22,8 @@ my @problems := $channel.problems;
 is +@problems, 0, 'did we get correct number of problems';
 
 my @nicks := $channel.nicks;
-is +@nicks, 259, 'did we get correct number of nicks';
-is @nicks.head, "APic", 'is the first nick ok';
+is +@nicks, 260, 'did we get correct number of nicks';
+is @nicks.skip.head, "APic", 'is the first real nick ok';
 is @nicks.tail, "|Sno|", 'is the last nick ok';
 
 is $channel.entries.elems, 1229,
@@ -74,5 +75,10 @@ ok $channel.is-first-date-of-month('2021-04-23'),  'first date in month ok';
 ok $channel.is-first-date-of-year('2021-04-23'),   'first date in year ok';
 nok $channel.is-first-date-of-month('2021-04-24'), 'first date in month nok';
 nok $channel.is-first-date-of-year('2021-04-24'),  'first date in year nok';
+
+my $colors := $state.add('raku.colors.json');
+$channel.shutdown;
+ok $colors.e, 'did we save state information';
+$colors.unlink;  # clean up
 
 # vim: expandtab shiftwidth=4

@@ -1,26 +1,49 @@
 use v6.*;
 
 use Array::Sorted::Util:ver<0.0.6>:auth<cpan:ELIZABETH>;
+use JSON::Fast:ver<0.15>;
+use RandomColor;
+use String::Color:ver<0.0.5>:auth<cpan:ELIZABETH>;
 
-class IRC::Channel::Log:ver<0.0.9>:auth<cpan:ELIZABETH> {
-    has IO() $.logdir is required;
-    has Mu   $.class  is required;
+# Default color generator
+sub generator($) {
+    RandomColor.new(:luminosity<bright>).list.head
+}
+
+class IRC::Channel::Log:ver<0.0.10>:auth<cpan:ELIZABETH> {
+    has IO() $.logdir is required is built(:bind);
+    has Mu   $.class  is required is built(:bind);
+    has IO() $.state              is built(:bind);
     has str  $.name = $!logdir.basename;
-    has str  @.dates    is built(False);
-    has str  @.years    is built(False);
-    has str  @.nicks    is built(False);
-    has      @.problems is built(False);
-    has Mu   @!logs;
-    has      %!nicks;
+    has String::Color $.sc is built(False);
+    has str  @.dates       is built(False);
+    has str  @.years       is built(False);
+    has      @.problems    is built(False);
+    has int $!update-colors;
+    has @!logs;
+    has %!nicks;
 
-    method TWEAK(:$batch = 6, :$degree = Kernel.cpu-cores --> Nil) {
+    # IO for file containing persistent color information
+    method !colors-json() {
+        $!state ?? $!state.add("$!name.colors.json") !! Nil
+    }
+
+    method TWEAK(
+      :$batch = 6,
+      :$degree = Kernel.cpu-cores,
+    --> Nil) {
+
+        # Read and process all log files asynchronously
         for $!logdir.dir.map(*.dir.Slip)
           .race(:$batch, :$degree)
-          .map(-> $path { $_ with $!class.new($path) }) -> $log {
+          .map(-> $path { $_ with $!class.new($path) })
+        -> $log {
 
+            # Associate the date with the log
             my $date := $log.date.Str;
-            inserts(@!dates, $date, @!logs, $log);
+            inserts @!dates, $date, @!logs, $log;
 
+            # Map nicks to dates with entries per date
             for $log.nicks {
                 if %!nicks{.key} -> %dates {
                     %dates{$date} := .value;
@@ -30,12 +53,26 @@ class IRC::Channel::Log:ver<0.0.9>:auth<cpan:ELIZABETH> {
                 }
             }
 
+            # Remember any problems for this log
             if $log.problems -> @problems {
                 @!problems.push: $date => @problems;
             }
         }
 
-        @!nicks = %!nicks.keys.sort;
+        # Create nick to color mapping from state if possible
+        with self!colors-json -> $colors {
+            if $colors.e {
+                $!sc := String::Color.new: :&generator,
+                  :colors(from-json $colors.slurp);
+            }
+        }
+
+        # Create nick to color mapping from nicks if we don't have one yet
+        without $!sc {
+            $!sc := String::Color.new: :&generator;
+            $!sc.add: %!nicks.keys;
+            $!update-colors = 1;
+        }
     }
 
 #-------------------------------------------------------------------------------
@@ -165,11 +202,12 @@ class IRC::Channel::Log:ver<0.0.9>:auth<cpan:ELIZABETH> {
 #-------------------------------------------------------------------------------
 # Utility methods
 
-    method years() {
+    method nicks(IRC::Channel::Log:D:) { $!sc.strings }
+    method years(IRC::Channel::Log:D:) {
         @!years ||= $!logdir.dir(:test(/ ^ \d ** 4 $ /)).map(*.basename).sort
     }
 
-    method watch-and-update() {
+    method watch-and-update(IRC::Channel::Log:D: --> Promise:D) {
         start {
             my $year := self.years.tail;
 
@@ -207,7 +245,7 @@ class IRC::Channel::Log:ver<0.0.9>:auth<cpan:ELIZABETH> {
         }
     }
 
-    method this-date(str $date) {
+    method this-date(IRC::Channel::Log:D: str $date) {
         with finds(@!dates, $date) -> $pos {
             $date
         }
@@ -215,10 +253,14 @@ class IRC::Channel::Log:ver<0.0.9>:auth<cpan:ELIZABETH> {
             nexts(@!dates, $date) // prevs(@!dates, $date)
         }
     }
-    method next-date(str $date) { nexts(@!dates, $date) }
-    method prev-date(str $date) { prevs(@!dates, $date) }
+    method next-date(IRC::Channel::Log:D: str $date) {
+        nexts(@!dates, $date)
+    }
+    method prev-date(IRC::Channel::Log:D: str $date) {
+        prevs(@!dates, $date)
+    }
 
-    method log(str $date) {
+    method log(IRC::Channel::Log:D: str $date) {
         with finds(@!dates, $date) -> $pos {
             @!logs[$pos]
         }
@@ -227,7 +269,7 @@ class IRC::Channel::Log:ver<0.0.9>:auth<cpan:ELIZABETH> {
         }
     }
 
-    method is-first-date-of-month(Str() $date) {
+    method is-first-date-of-month(IRC::Channel::Log:D: str $date --> Bool:D) {
         if $date.ends-with('-01') {
             True
         }
@@ -241,7 +283,7 @@ class IRC::Channel::Log:ver<0.0.9>:auth<cpan:ELIZABETH> {
             }
         }
     }
-    method is-first-date-of-year(Str() $date) {
+    method is-first-date-of-year(IRC::Channel::Log:D: $date --> Bool:D) {
         if $date.ends-with('-01-01') {
             True
         }
@@ -254,6 +296,11 @@ class IRC::Channel::Log:ver<0.0.9>:auth<cpan:ELIZABETH> {
                 True
             }
         }
+    }
+
+    method shutdown(IRC::Channel::Log:D: --> Nil) {
+        self!colors-json.spurt: to-json $!sc.Map, :!pretty
+          if $!update-colors;
     }
 }
 
@@ -284,16 +331,18 @@ say $channel.problems.elems;    # hash with problems / date
 .say for $channel.entries;      # all entries of this channel
 
 .say for $channel.entries(
-  :conversation,           # only return conversational messages
-  :control,                # only return control messages
-  :dates<2021-04-23>,      # limit to given date(s)
-  :nicks<lizmat japhb>,    # limit to given nick(s)
-  :contains<foo>,          # limit to containing given text
-  :starts-with<m:>,        # limit to starting with given text
-  :matches(/ /d+ /),       # limit to matching regex
+  :conversation,         # only return conversational messages
+  :control,              # only return control messages
+  :dates<2021-04-23>,    # limit to given date(s)
+  :nicks<lizmat japhb>,  # limit to given nick(s)
+  :contains<foo>,        # limit to containing given text
+  :starts-with<m:>,      # limit to starting with given text
+  :matches(/ /d+ /),     # limit to matching regex
 );
 
 $channel.watch-and-update;  # watch and process updates
+
+$channel.shutdown;          # perform all necessary actions on shutdown
 
 =end code
 
@@ -313,10 +362,12 @@ use IRC::Channel::Log;
 
 my $channel = IRC::Channel::Log.new(
   logdir => "logs/raku",        # directory containing logs
-  class  => IRC::Log::Colabti,  # for example
-  name   => "foobar",           # defaults to logdir.basename
-  batch  => 1,                  # defaults to 6
-  degree => 8,                  # defaults to Kernel.cpu-cores
+  state  => "state",            # directory containing persistent state info
+  class  => IRC::Log::Colabti,  # class implementing log parsing logic
+  sc     => String::Color.new,  # optional String::Color object for mapping
+  name   => "foobar",           # name of channel, default: logdir.basename
+  batch  => 1,                  # number of logs parsed at a time, default: 6
+  degree => 8,                  # nr of threads used, default: Kernel.cpu-cores
 );
 
 =end code
@@ -339,17 +390,7 @@ directory.  For example, in the test of this module:
 
 This argument is required.
 
-=head3 class
-
-The class to be used to interpret log files, e.g. C<IRC::Log::Colabti>.
-This argument is also required.
-
-=head3 name
-
-The name of the channel.  Optional.  Defaults to the base name of the
-directory specified with C<logdir>.
-
-=head3 batch
+=head3 :batch
 
 The batch size to use when racing to read all of the log files of the
 given channel.  Defaults to 6 as an apparent optimal values to optimize
@@ -357,11 +398,26 @@ for wallclock and not have excessive CPU usage.  You can use C<:!batch>
 to indicate you do not want any multi-threading: this is equivalent to
 specifying C<1> or C<0> or C<True>.
 
-=head3 degree
+=head3 :class
+
+The class to be used to interpret log files, e.g. C<IRC::Log::Colabti>.
+This argument is also required.
+
+=head3 :degree
 
 The maximum number of threads to be used when racing to read all of the
 log files of the given channel.  Defaults to C<Kernel.cpu-cores> (aka the
 number of CPU cores the system claims to have).
+
+=head3 :name
+
+The name of the channel.  Optional.  Defaults to the base name of the
+directory specified with C<logdir>.
+
+=head3 :state
+
+The directory (either as a string or as an C<IO::Path> object) in which
+persistent state information of the channel is located.
 
 =head1 INSTANCE METHODS
 
@@ -612,6 +668,37 @@ Returns C<Nil> if the specified date is the first date or before that.
 The C<problems> instance method returns a sorted list of C<Pair>s with
 the date (formatted as YYYY-MM-DD) as key, and a list of problem
 descriptions as value.
+
+=head2 sc
+
+=begin code :lang<raku>
+
+say "$channel.sc.elems() nick to color mappings are known";
+
+=end code
+
+The C<String::Color> object that contains the mapping of nick to color.
+
+=head2 shutdown
+
+=begin code :lang<raku>
+
+$channel.shutdown;
+
+=end code
+
+Performs all the actions needed to shutdown: specifically saves the nick
+to color mapping if a C<state> directory was specified.
+
+=head2 state
+
+=begin code :lang<raku>
+
+say "state is saved in $channel.state()";
+
+=end code
+
+The C<IO> object of the directory in which persistent state will be saved.
 
 =head2 this-date
 
