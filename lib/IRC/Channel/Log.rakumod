@@ -2,38 +2,26 @@ use v6.*;
 
 use Array::Sorted::Util:ver<0.0.6>:auth<cpan:ELIZABETH>;
 use JSON::Fast:ver<0.15>;
-use RandomColor;
-use String::Color:ver<0.0.5>:auth<cpan:ELIZABETH>;
+use String::Color:ver<0.0.6>:auth<cpan:ELIZABETH>;
 
-# Default color generator
-sub generator($) {
-    RandomColor.new(:luminosity<bright>).list.head
-}
-
-# Default nick / color mapper
-sub nick-mapper(str $nick, str $color) {
-    '<span style="color: ' ~ $color ~ '">' ~ $nick ~ '</span>'
-}
-
-class IRC::Channel::Log:ver<0.0.10>:auth<cpan:ELIZABETH> {
-    has IO() $.logdir         is required is built(:bind);
-    has Mu   $.class          is required is built(:bind);
-    has IO() $.state                      is built(:bind);
-    has      &!nick-mapper is built(:bind) = &nick-mapper;
+class IRC::Channel::Log:ver<0.0.11>:auth<cpan:ELIZABETH> {
+    has IO() $.logdir    is required is built(:bind);
+    has      $.class     is required is built(:bind);
+    has      &.generator is required is built(:bind);
+    has IO() $.state                 is built(:bind);
     has str  $.name = $!logdir.basename;
-    has String::Color $.sc is built(False);
     has str  @.dates       is built(False);
     has str  @.years       is built(False);
     has      @.problems    is built(False);
-    has int  $!update-colors;
+    has String::Color $!sc;
     has      @!logs;
     has      %!nicks;
-    has Lock $!nick-mapped-lock;
-    has      %!nick-mapped;
 
     # IO for file containing persistent color information
     method !colors-json() {
-        $!state ?? $!state.add("colors.json") !! Nil
+        $!state 
+          ?? $!state.add("colors.json")
+          !! Nil
     }
 
     # Not done creating the object yet
@@ -70,22 +58,17 @@ class IRC::Channel::Log:ver<0.0.10>:auth<cpan:ELIZABETH> {
 
         # Create nick to color mapping from state if possible
         with self!colors-json -> $colors {
-            if $colors.e {
-                $!sc := String::Color.new: :&generator,
-                  :colors(from-json $colors.slurp);
-            }
+            $!sc := String::Color.new:
+              :&!generator,
+              :colors(from-json $colors.slurp)
+              if $colors.e;
         }
 
         # Create nick to color mapping from nicks if we don't have one yet
         without $!sc {
-            $!sc := String::Color.new: :&generator;
+            $!sc := String::Color.new: :&!generator;
             $!sc.add: %!nicks.keys;
-            $!update-colors = 1;
         }
-
-        # Set up the HTML nick mapper
-        $!nick-mapped-lock := Lock.new;
-        %!nick-mapped      := $!sc.Map(&!nick-mapper);
     }
 
 #-------------------------------------------------------------------------------
@@ -215,7 +198,12 @@ class IRC::Channel::Log:ver<0.0.10>:auth<cpan:ELIZABETH> {
 #-------------------------------------------------------------------------------
 # Utility methods
 
-    method nicks(IRC::Channel::Log:D:) { $!sc.strings }
+    method active(IRC::Channel::Log:D: --> Bool:D) {
+        $!state
+          ?? !$!state.add("inactive").e
+          !! True
+    }
+
     method years(IRC::Channel::Log:D:) {
         @!years ||= $!logdir.dir(:test(/ ^ \d ** 4 $ /)).map(*.basename).sort
     }
@@ -260,16 +248,8 @@ class IRC::Channel::Log:ver<0.0.10>:auth<cpan:ELIZABETH> {
                                 %!nicks{.key}{$date} := .value for $log.nicks;
                             }
 
-                            # Create mappings for new nicks
-                            if $!sc.add($log.nicks) -> @add {
-                                $!update-colors = 1;
-                                $!nick-mapped-lock.protect: {
-                                    for @add -> (:key($nick), :value($color)) {
-                                        %!nick-mapped{$nick} :=
-                                          &!nick-mapper($nick, $color);
-                                    }
-                                }
-                            }
+                            # Create mappings for any new nicks
+                            $!sc.add($log.nicks);
                         }
                     }
                 }
@@ -277,17 +257,8 @@ class IRC::Channel::Log:ver<0.0.10>:auth<cpan:ELIZABETH> {
         }
     }
 
-    # Method to return a thread-safe copy of the %!nick-mapped hash.
-    method nick-mapped(IRC::Channel::Log:D:) {
-        $!nick-mapped-lock.protect: {
-            use nqp;
-            nqp::p6bindattrinvres(
-              nqp::create(Map),Map,'$!storage',nqp::clone(
-                nqp::getattr(%!nick-mapped,Map,'$!storage')
-              )
-            )
-        }
-    }
+    method nicks(IRC::Channel::Log:D:) { $!sc.strings }
+    method colors(IRC::Channel::Log:D: --> Map:D) { $!sc.Map }
 
     # Return the closest date for a given date.  If there is no log
     # for that date, then first look forward in time.  If that fails,
@@ -357,8 +328,7 @@ class IRC::Channel::Log:ver<0.0.10>:auth<cpan:ELIZABETH> {
 
     # Perform all of the necessary shutdown work
     method shutdown(IRC::Channel::Log:D: --> Nil) {
-        self!colors-json.spurt: to-json $!sc.Map, :!pretty
-          if $!update-colors;
+        self!colors-json.spurt: to-json $!sc.Map, :!pretty;
     }
 }
 
@@ -379,8 +349,9 @@ use IRC::Log::Colabti;  # class implementing one day of logs
 use IRC::Channel::Log;
 
 my $channel = IRC::Channel::Log.new(
-  logdir => "logs/raku",        # directory containing logs
-  class  => IRC::Log::Colabti,  # for example
+  logdir    => "logs/raku",                   # directory containing logs
+  class     => IRC::Log::Colabti,             # for example
+  generator => -> $nick { RandomColor.new },  # generate color for nick
 );
 
 say $channel.dates;             # the dates for which there are logs available
@@ -419,13 +390,13 @@ use IRC::Log::Colabti;  # class implementing one day of logs
 use IRC::Channel::Log;
 
 my $channel = IRC::Channel::Log.new(
-  logdir => "logs/raku",        # directory containing logs
-  state  => "state",            # directory containing persistent state info
-  class  => IRC::Log::Colabti,  # class implementing log parsing logic
-  sc     => String::Color.new,  # optional String::Color object for mapping
-  name   => "foobar",           # name of channel, default: logdir.basename
-  batch  => 1,                  # number of logs parsed at a time, default: 6
-  degree => 8,                  # nr of threads used, default: Kernel.cpu-cores
+  logdir    => "logs/raku",        # directory containing logs
+  class     => IRC::Log::Colabti,  # class implementing log parsing logic
+  generator => &generator,        # generate color for nick
+  name      => "foobar",           # name of channel, default: logdir.basename
+  state     => "state",            # directory containing persistent state info
+  batch     => 1,                  # number of logs parsed at a time, default: 6
+  degree    => 8,                  # threads used, default: Kernel.cpu-cores
 );
 
 =end code
@@ -467,15 +438,15 @@ The maximum number of threads to be used when racing to read all of the
 log files of the given channel.  Defaults to C<Kernel.cpu-cores> (aka the
 number of CPU cores the system claims to have).
 
+=head3 :generator
+
+A C<Callable> expected to take a nick and return a color to be associated
+with that nick.
+
 =head3 :name
 
 The name of the channel.  Optional.  Defaults to the base name of the
 directory specified with C<logdir>.
-
-=head3 :nick-mapper
-
-A C<Callable> that should take a nick and a color, and create a HTML mapping
-for that.  Optional.  A default mapper is provided.
 
 =head3 :state
 
@@ -483,6 +454,19 @@ The directory (either as a string or as an C<IO::Path> object) in which
 persistent state information of the channel is located.
 
 =head1 INSTANCE METHODS
+
+=head2 active
+
+=begin code :lang<raku>
+
+say "$channel.name() is active" if $channel.active;
+
+=end code
+
+The C<active> instance method returns whether the channel is considered to
+be active.  If a C<state> directory has been specified, and that directory
+contains a file named "inactive", then the channel is considered to B<not>
+be active.
 
 =head2 dates
 

@@ -13,8 +13,9 @@ use IRC::Log::Colabti;  # class implementing one day of logs
 use IRC::Channel::Log;
 
 my $channel = IRC::Channel::Log.new(
-  logdir => "logs/raku",        # directory containing logs
-  class  => IRC::Log::Colabti,  # for example
+  logdir    => "logs/raku",                   # directory containing logs
+  class     => IRC::Log::Colabti,             # for example
+  generator => -> $nick { RandomColor.new },  # generate color for nick
 );
 
 say $channel.dates;             # the dates for which there are logs available
@@ -53,13 +54,13 @@ use IRC::Log::Colabti;  # class implementing one day of logs
 use IRC::Channel::Log;
 
 my $channel = IRC::Channel::Log.new(
-  logdir => "logs/raku",        # directory containing logs
-  state  => "state",            # directory containing persistent state info
-  class  => IRC::Log::Colabti,  # class implementing log parsing logic
-  sc     => String::Color.new,  # optional String::Color object for mapping
-  name   => "foobar",           # name of channel, default: logdir.basename
-  batch  => 1,                  # number of logs parsed at a time, default: 6
-  degree => 8,                  # nr of threads used, default: Kernel.cpu-cores
+  logdir    => "logs/raku",        # directory containing logs
+  class     => IRC::Log::Colabti,  # class implementing log parsing logic
+  generator => &generator,        # generate color for nick
+  name      => "foobar",           # name of channel, default: logdir.basename
+  state     => "state",            # directory containing persistent state info
+  batch     => 1,                  # number of logs parsed at a time, default: 6
+  degree    => 8,                  # threads used, default: Kernel.cpu-cores
 );
 ```
 
@@ -88,13 +89,13 @@ The class to be used to interpret log files, e.g. `IRC::Log::Colabti`. This argu
 
 The maximum number of threads to be used when racing to read all of the log files of the given channel. Defaults to `Kernel.cpu-cores` (aka the number of CPU cores the system claims to have).
 
+### :generator
+
+A `Callable` expected to take a nick and return a color to be associated with that nick.
+
 ### :name
 
 The name of the channel. Optional. Defaults to the base name of the directory specified with `logdir`.
-
-### :nick-mapper
-
-A `Callable` that should take a nick and a color, and create a HTML mapping for that. Optional. A default mapper is provided.
 
 ### :state
 
@@ -102,6 +103,15 @@ The directory (either as a string or as an `IO::Path` object) in which persisten
 
 INSTANCE METHODS
 ================
+
+active
+------
+
+```raku
+say "$channel.name() is active" if $channel.active;
+```
+
+The `active` instance method returns whether the channel is considered to be active. If a `state` directory has been specified, and that directory contains a file named "inactive", then the channel is considered to **not** be active.
 
 dates
 -----

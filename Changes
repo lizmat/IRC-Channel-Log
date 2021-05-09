@@ -2,6 +2,15 @@ Revision history for IRC-Channel-Log
 
 {{$NEXT}}
 
+0.0.11  2021-05-09T12:53:43+02:00
+    - More simplification
+    - Up dependency on String::Color
+    - Make the $!sc attribute private
+    - Add required :generator to pass on to String::Color
+    - Remove all nick-mapped related functionality
+    - Add "colors" method for threadsafe returning of nick to color mapping
+    - Add "active" method for denoting whether a channel is considered active
+
 0.0.10  2021-05-08T23:53:22+02:00
     - Added dependencies on JSON::Fast, RandomColor, String::Color
     = Added "state" named argument to specify directory to keep state

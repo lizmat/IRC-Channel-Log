@@ -2,13 +2,15 @@ use Test;
 use IRC::Log::Colabti;
 use IRC::Channel::Log;
 
-plan 38;
+plan 36;
 
 my $logdir := $?FILE.IO.sibling('raku');
 my $state  := $?FILE.IO.sibling('state');
 my $class  := IRC::Log::Colabti;
 
-my $channel = IRC::Channel::Log.new(:$logdir, :$state, :$class);
+sub generator($nick) { "$nick.color" }
+
+my $channel = IRC::Channel::Log.new(:$logdir, :$class, :&generator, :$state);
 is $channel.problems.elems, 0,
   'there should be no problems';
 isa-ok $channel, IRC::Channel::Log;
@@ -21,10 +23,10 @@ is @dates.tail, '2021-04-24', 'is the last date ok';
 my @problems := $channel.problems;
 is +@problems, 0, 'did we get correct number of problems';
 
-my @nicks := $channel.nicks;
+my @nicks = $channel.nicks;
 is +@nicks, 260, 'did we get correct number of nicks';
-is @nicks.skip.head, "APic", 'is the first real nick ok';
-is @nicks.tail, "|Sno|", 'is the last nick ok';
+is @nicks.sort.skip.head, "APic", 'is the first real nick ok';
+is @nicks.sort.tail, "|Sno|", 'is the last nick ok';
 
 is $channel.entries.elems, 1229,
   'did we get correct total entries';
@@ -32,12 +34,6 @@ is $channel.entries(:control).elems, 766,
   'did we get correct number of control messages';
 is $channel.entries(:conversation).elems, 463,
   'did we get correct number of  messages';
-
-my %nick-mapped := $channel.nick-mapped;
-ok %nick-mapped<vrurg>.starts-with('<span style="color: #'),
-  'Did it HTMLize correctly (1)';
-ok %nick-mapped<vrurg>.ends-with('">vrurg</span>'),
-  'Did it HTMLize correctly (2)';
 
 is $channel.entries(:nicks<lizmat>).elems, 118,
   'did we get correct number of entries by lizmat';
