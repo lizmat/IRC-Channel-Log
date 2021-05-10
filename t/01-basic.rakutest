@@ -78,9 +78,11 @@ ok $channel.is-first-date-of-year('2021-04-23'),   'first date in year ok';
 nok $channel.is-first-date-of-month('2021-04-24'), 'first date in month nok';
 nok $channel.is-first-date-of-year('2021-04-24'),  'first date in year nok';
 
+$state.mkdir;
 my $colors := $state.add('colors.json');
 $channel.shutdown;
 ok $colors.e, 'did we save state information';
 $colors.unlink;  # clean up
+$state.rmdir;
 
 # vim: expandtab shiftwidth=4

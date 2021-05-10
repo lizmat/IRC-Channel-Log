@@ -2,6 +2,9 @@ Revision history for IRC-Channel-Log
 
 {{$NEXT}}
 
+0.0.12  2021-05-10T13:28:41+02:00
+    - Fix problem in test saving state
+
 0.0.11  2021-05-09T12:53:43+02:00
     - More simplification
     - Up dependency on String::Color
