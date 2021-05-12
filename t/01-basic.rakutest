@@ -2,13 +2,16 @@ use Test;
 use IRC::Log::Colabti;
 use IRC::Channel::Log;
 
-plan 49;
+plan 64;
 
 my $logdir := $?FILE.IO.sibling('raku');
 my $state  := $?FILE.IO.sibling('state');
 my $class  := IRC::Log::Colabti;
 
 sub generator($nick) { "$nick.color" }
+
+#-------------------------------------------------------------------------------
+# Generic tests
 
 my $channel = IRC::Channel::Log.new(:$logdir, :$class, :&generator, :$state);
 is $channel.problems.elems, 0,
@@ -27,6 +30,9 @@ my @nicks = $channel.nicks;
 is +@nicks, 260, 'did we get correct number of nicks';
 is @nicks.sort.skip.head, "APic", 'is the first real nick ok';
 is @nicks.sort.tail, "|Sno|", 'is the last nick ok';
+
+#-------------------------------------------------------------------------------
+# Tests on number of elements selected
 
 for False, True -> $reverse {
     is $channel.entries(:$reverse).elems, 1229,
@@ -56,16 +62,94 @@ for False, True -> $reverse {
 
     is $channel.entries(:contains<answer>, :$reverse).elems, 4,
       'correct number of entries with text "answer"';
-    is $channel.entries(:contains<question answer>, :$reverse).elems, 12,
-      'correct number of entries with text "question" or "answer"';
-    is $channel.entries(:contains<question answer>, :all, :$reverse).elems, 2,
-      'correct number of entries with text "question" and "answer"';
+    is $channel.entries(:contains<this answer>, :$reverse).elems, 30,
+      'correct number of entries with text "this" or "answer"';
+    is $channel.entries(:contains<this answer>, :all, :$reverse).elems, 1,
+      'correct number of entries with text "this" and "answer"';
 
     is $channel.entries(
       :matches(/ [^ | \s+] \d\d+ [\s+ | $] /), :$reverse
     ).elems, 9,
       'correct number of whitespaced multi-digit numbers';
 }
+
+#-------------------------------------------------------------------------------
+# Same tests, but now checking on first / last entry
+
+sub first-last($first, $last = $first, |c) {
+    subtest "checking first/last on {c.raku}" => {
+        plan 4;
+
+        is $channel.entries(|c).head.gist, $first,
+          'is first entry correct';
+        is $channel.entries(:reverse, |c).tail.gist, $first,
+          'is last entry on reverse correct';
+
+        is $channel.entries(|c).tail.gist, $last,
+          'is last entry correct';
+        is $channel.entries(:reverse, |c).head.gist, $last,
+          'is first entry on reverse correct';
+    }
+}
+
+my $first-control := '[00:04] *** Geth left';
+my $last-control  := "[23:46] *** aborazmeh left";
+my $first-text := '[06:31] Xliff: is your network faster than your disk?';
+my $last-text  := "[23:44] heh, even that isn't right. leg is also lexographic; cmp (not string-specific) is by codepoint, and coll is something I don't fully understand yet";
+
+first-last $first-control, $last-control;
+first-last $first-control, $last-control, :control;
+first-last $first-text,    $last-text,    :!control;
+first-last $first-text,    $last-text,    :conversation;
+first-last $first-control, $last-control, :!conversation;
+
+first-last
+  '[08:39] :q',
+  '[22:31] * lizmat is glad that japhb is around to answer questions while she hits the sack',
+  :nicks<lizmat>;
+first-last
+  '[11:09] *** lizmat is now known as lismat',
+  :nicks<lizmat>, :control;
+first-last
+  '[08:39] :q',
+  '[22:31] * lizmat is glad that japhb is around to answer questions while she hits the sack',
+  :nicks<lizmat>, :conversation;
+
+first-last
+  '[11:53] that would be *very* futuristic',
+  '[22:31] * lizmat is glad that japhb is around to answer questions while she hits the sack',
+  :nicks<lizmat>, :dates<2021-04-24>;
+
+first-last
+  '[08:39] :q',
+  '[13:57] the ending was hacked together really, it was never intended to end at 17 episodes',
+  :nicks<lizmat>, :dates("2021-04-20".Date .. "2021-04-23".Date);
+
+first-last
+  '[08:39] :q',
+  '[23:44] ^^ Why does that even work?  Why does &?BLOCK go to the given and not to the when?',
+  :nicks<lizmat japhb>;
+
+first-last
+  "[13:13] IMHO the whole public namespace hierarchy doesn't work anyway. Different people would answer this question differently and there's no official guidance.",
+  '[22:31] * lizmat is glad that japhb is around to answer questions while she hits the sack',
+  :contains<answer>;
+
+first-last
+  '[09:30] how do I make this argument into Array?',
+  "[22:56] wonder if there'd be much difference using a different dataset, especially one more deeply nested, or more numbers instead of strings, etc. if you were wanting to use this for MUGS, I'd expect many games to use a lot more numbers",
+  :contains<this answer>;
+
+first-last
+  "[13:13] IMHO the whole public namespace hierarchy doesn't work anyway. Different people would answer this question differently and there's no official guidance.",
+  :contains<this answer>, :all;
+
+first-last
+  '[13:52] 404 for the win!',
+  '[21:16] m: my Blob[Any] $foo = "foo", 21',
+  :matches(/ [^ | \s+] \d\d+ [\s+ | $] /);
+
+#-------------------------------------------------------------------------------# Utility methods tests
 
 is $channel.this-date('2021-04-23'), '2021-04-23', 'did we get this date';
 is $channel.this-date('2021-04-22'), '2021-04-23', 'did we get next date';
@@ -84,6 +168,9 @@ ok $channel.is-first-date-of-month('2021-04-23'),  'first date in month ok';
 ok $channel.is-first-date-of-year('2021-04-23'),   'first date in year ok';
 nok $channel.is-first-date-of-month('2021-04-24'), 'first date in month nok';
 nok $channel.is-first-date-of-year('2021-04-24'),  'first date in year nok';
+
+#-------------------------------------------------------------------------------
+# Test shutdown behaviour
 
 $state.mkdir;
 my $colors := $state.add('colors.json');
