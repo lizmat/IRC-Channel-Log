@@ -4,7 +4,7 @@ use Array::Sorted::Util:ver<0.0.6>:auth<cpan:ELIZABETH>;
 use JSON::Fast:ver<0.15>;
 use String::Color:ver<0.0.6>:auth<cpan:ELIZABETH>;
 
-class IRC::Channel::Log:ver<0.0.13>:auth<cpan:ELIZABETH> {
+class IRC::Channel::Log:ver<0.0.14>:auth<cpan:ELIZABETH> {
     has IO() $.logdir    is required is built(:bind);
     has      $.class     is required is built(:bind);
     has      &.generator is required is built(:bind);
@@ -79,35 +79,33 @@ class IRC::Channel::Log:ver<0.0.13>:auth<cpan:ELIZABETH> {
 
     # :starts-with post-processing filters
     multi method entries(IRC::Channel::Log:D:
-      Str:D :starts-with($text)!,
+      :starts-with(@needle)!,
+      :$ignorecase,
       :conversation($),  # ignored
       :control($),       # ignored
-    ) {
-        self.entries(|%_).grep: { .conversation && .text.starts-with($text) }
-    }
-    multi method entries(IRC::Channel::Log:D:
-      Str:D :starts-with(@text)!,
-            :conversation($),  # ignored
-            :control($),       # ignored
     ) {
         self.entries(|%_).grep: -> $entry {
             if $entry.conversation {
                 my $text := $entry.text;
-                @text.first: {  $text.starts-with($_) }
+                @needle.first: {  $text.starts-with($_, :$ignorecase) }
             }
+        }
+    }
+    multi method entries(IRC::Channel::Log:D:
+      Str:D :starts-with($needle)!,
+            :$ignorecase,
+            :conversation($),  # ignored
+            :control($),       # ignored
+    ) {
+        self.entries(|%_).grep: {
+            .conversation && .text.starts-with($needle, :$ignorecase)
         }
     }
 
     # :contains post-processing filters
     multi method entries(IRC::Channel::Log:D:
-      Str:D :contains($text)!,
-            :conversation($),  # ignored
-            :control($),       # ignored
-    ) {
-        self.entries(|%_).grep: { .conversation && .text.contains($text) }
-    }
-    multi method entries(IRC::Channel::Log:D:
-      :contains(@text)!,
+      :contains(@needle)!,
+      :$ignorecase,
       :$all,
       :conversation($),  # ignored
       :control($),       # ignored
@@ -116,8 +114,69 @@ class IRC::Channel::Log:ver<0.0.13>:auth<cpan:ELIZABETH> {
             if $entry.conversation {
                 my $text := $entry.text;
                 $all
-                 ?? !@text.first: { !$text.contains($_) }
-                 !!  @text.first: {  $text.contains($_) }
+                 ?? !@needle.first: { !$text.contains($_, :$ignorecase) }
+                 !!  @needle.first: {  $text.contains($_, :$ignorecase) }
+            }
+        }
+    }
+    multi method entries(IRC::Channel::Log:D:
+      Str:D :contains($needle)!,
+            :$ignorecase,
+            :conversation($),  # ignored
+            :control($),       # ignored
+    ) {
+        self.entries(|%_).grep: {
+            .conversation && .text.contains($needle, :$ignorecase)
+        }
+    }
+
+    # :words post-processing filters
+    multi method entries(IRC::Channel::Log:D:
+      :words(@needle)!,
+      :$ignorecase,
+      :$all,
+      :conversation($),  # ignored
+      :control($),       # ignored
+    ) {
+        if $ignorecase {
+            my @needle-fc = @needle.map: *.fc;
+            self.entries(|%_).grep: -> $entry {
+                if $entry.conversation {
+                    my str @words = $entry.text.words.map: *.fc;
+                    $all
+                     ?? !@needle-fc.first: { $_ ∉ @words }
+                     !!  @needle-fc.first: { $_ ∈ @words }
+                }
+            }
+        }
+        else {
+            self.entries(|%_).grep: -> $entry {
+                if $entry.conversation {
+                    my str @words = $entry.text.words;
+                    $all
+                     ?? !@needle.first: { $_ ∉ @words }
+                     !!  @needle.first: { $_ ∈ @words }
+                }
+            }
+        }
+    }
+    multi method entries(IRC::Channel::Log:D:
+      Str:D :words($needle)!,
+            :$ignorecase,
+            :conversation($),  # ignored
+            :control($),       # ignored
+    ) {
+        if $ignorecase {
+            my $needle-fc := $needle.fc;
+            self.entries(|%_).grep: {
+                .conversation
+                  && .text.words.map(*.fc).first($needle-fc)
+            }
+        }
+        else {
+            self.entries(|%_).grep: {
+                .conversation
+                  && .text.words.first($needle)
             }
         }
     }
@@ -128,7 +187,9 @@ class IRC::Channel::Log:ver<0.0.13>:auth<cpan:ELIZABETH> {
               :conversation($),  # ignored
               :control($),       # ignored
     ) {
-        self.entries(|%_).grep: { .conversation && .text.contains($regex) }
+        self.entries(|%_).grep: {
+            .conversation && .text.contains($regex)
+        }
     }
 
     # :conversation post-processing filter
@@ -553,6 +614,10 @@ in YYYY-MM-DD format) of which there are entries available.
 
 .say for $channel.entries(:starts-with<m:>);    # starting with text
 
+.say for $channel.entries(:contains<foo>);      # containing string
+
+.say for $channel.entries(:words<foo>);         # containing word
+
 .say for $channel.entries(:nicks<lizmat>);      # for one or more nicks
 
 .say for $channel.entries(
@@ -576,6 +641,12 @@ the log will be produced: this allows you to do any ad-hoc filtering.
 
 The following named arguments are supported:
 
+=head3 :all
+
+The C<all> named argument can only be used in combination with the C<contains>
+and C<words> named arguments.  If specified with a true value, it will force
+entries to only be selected if B<all> conditions are true.
+
 =head3 :contains
 
 =begin code :lang<raku>
@@ -585,6 +656,9 @@ $channel.entries(:contains<question>);
 
 # "question" or "answer"
 $channel.entries(:contains<question answer>);
+
+# "question" or "answer"
+$channel.entries(:contains<question answer>, :ignorecase);
 
 # "question" and "answer"
 $channel.entries(:contains<question answer>, :all);
@@ -596,6 +670,9 @@ strings that an entry should contain.  By default, an entry should
 only contain one of the specified strings to be selected.  If you
 want an entry to contain B<all> strings, then an additional C<:all>
 named argument can be specified (with a true value).
+
+If comparisons need to be done in an case-insensitive manner, then
+the C<ignorecase> named argument can be specified with a true value.
 
 Since this only applies to conversational entries, any additional
 setting of the C<conversation> or C<control> named arguments are
@@ -641,6 +718,12 @@ $channel.entries(:@dates);              # multiple dates
 The C<dates> named argument allows one to specify the date(s) from
 which entries should be selected.  Dates can be specified in anything
 that will stringify in the YYYY-MM-DD format.
+
+=head3 :ignorecase
+
+The C<ignorecase> named argument can only be used in combination with the
+C<starts-with>, C<contains> and C<words> named arguments.  If specified with
+a true value, it will do all comparisons in a case-insensitive manner.
 
 =head3 :matches
 
@@ -690,6 +773,9 @@ recent entries first, in reverse chronological order.
 # starts with "m:"
 $channel.entries(:starts-with<m:>);
 
+# starts with "how" in any case
+$channel.entries(:starts-with<how>, :ignorecase);
+
 # starts with "m:" or "j:"
 $channel.entries(:starts-with<m: j:>);
 
@@ -697,6 +783,40 @@ $channel.entries(:starts-with<m: j:>);
 
 The C<start-with> named argument allows specification of one or more
 strings that an entry should start with.
+
+If comparisons need to be done in an case-insensitive manner, then
+the C<ignorecase> named argument can be specified with a true value.
+
+Since this only applies to conversational entries, any additional
+setting of the C<conversation> or C<control> named arguments are
+ignored.
+
+=head3 :words
+
+=begin code :lang<raku>
+
+# contains the word "foo"
+$channel.entries(:words<foo>);
+
+# contains the word "foo" or "bar"
+$channel.entries(:words<foo bar>);
+
+# contains the word "foo" or the word "bar" in any case
+$channel.entries(:words<foo bar>, :ignorecase);
+
+# contains the word "foo" *and* "bar"
+$channel.entries(:words<foo bar>, :all);
+
+=end code
+
+The C<words> named argument allows specification of one or more words that
+an entry should contain.  By default, an entry should only contain one of
+the specified words to be selected.  If you want an entry to contain B<all>
+words, then an additional C<:all> named argument can be specified (with a
+true value).
+
+If comparisons need to be done in an case-insensitive manner, then
+the C<ignorecase> named argument can be specified with a true value.
 
 Since this only applies to conversational entries, any additional
 setting of the C<conversation> or C<control> named arguments are

@@ -2,7 +2,7 @@ use Test;
 use IRC::Log::Colabti;
 use IRC::Channel::Log;
 
-plan 64;
+plan 79;
 
 my $logdir := $?FILE.IO.sibling('raku');
 my $state  := $?FILE.IO.sibling('state');
@@ -17,6 +17,9 @@ my $channel = IRC::Channel::Log.new(:$logdir, :$class, :&generator, :$state);
 is $channel.problems.elems, 0,
   'there should be no problems';
 isa-ok $channel, IRC::Channel::Log;
+
+#.say for $channel.entries(:words<always they>);
+#=finish
 
 my @dates = $channel.dates;
 is +@dates, 2, 'did we get 2 dates';
@@ -60,12 +63,24 @@ for False, True -> $reverse {
     is $channel.entries(:nicks<lizmat japhb>, :$reverse).elems, 146,
       'correct number of entries by lizmat or japhb';
 
+    is $channel.entries(:starts-with<m:>, :$reverse).elems, 17,
+      'correct number of entries that start with m:';
+    is $channel.entries(:starts-with<m: how>, :ignorecase, :$reverse).elems, 22,
+      'correct number of entries that start with m: or how ignorecased';
+
     is $channel.entries(:contains<answer>, :$reverse).elems, 4,
       'correct number of entries with text "answer"';
     is $channel.entries(:contains<this answer>, :$reverse).elems, 30,
       'correct number of entries with text "this" or "answer"';
     is $channel.entries(:contains<this answer>, :all, :$reverse).elems, 1,
       'correct number of entries with text "this" and "answer"';
+
+    is $channel.entries(:words<with>, :$reverse).elems, 28,
+      'correct number of entries with the word "with"';
+    is $channel.entries(:words<they always>, :$reverse).elems, 12,
+      'correct number of entries with the word "they" or "always"';
+    is $channel.entries(:words<they always>, :all, :$reverse).elems, 1,
+      'correct number of entries with the word "they" or "always"';
 
     is $channel.entries(
       :matches(/ [^ | \s+] \d\d+ [\s+ | $] /), :$reverse
@@ -131,6 +146,16 @@ first-last
   :nicks<lizmat japhb>;
 
 first-last
+  '[09:30] m: sub (@arr) { @arr.push(5).say }((1, 2, 3))',
+  '[23:44] m: given 5 { when * % 2 { say "Odd"; &?BLOCK(6) }; when * %% 2 { say "Even" }}',
+  :starts-with<m:>;
+
+first-last
+  '[09:25] How may i sort a hash by a part of his key?',
+  '[23:44] m: given 5 { when * % 2 { say "Odd"; &?BLOCK(6) }; when * %% 2 { say "Even" }}',
+  :starts-with< m: how >, :ignorecase;
+
+first-last
   "[13:13] IMHO the whole public namespace hierarchy doesn't work anyway. Different people would answer this question differently and there's no official guidance.",
   '[22:31] * lizmat is glad that japhb is around to answer questions while she hits the sack',
   :contains<answer>;
@@ -143,6 +168,20 @@ first-last
 first-last
   "[13:13] IMHO the whole public namespace hierarchy doesn't work anyway. Different people would answer this question differently and there's no official guidance.",
   :contains<this answer>, :all;
+
+first-last
+  '[09:30] From the lower to the bigger. They just can be many with the same number.',
+  "[23:16] Nope, haven't done that yet.  I wish we had a good per-line profiler, like NYTProf is for perl5, because the routines here are HUGE with big branching structures, so per-call statistics are too rough.  :-/",
+  :words<with>;
+
+first-last
+  '[09:28] do they need to sort as number or as string ?  I assume as number ?',
+  '[22:32] raydiak: When you upload packages to zef or cpan, you are uploading a snapshot tarball of a particular version.  So they can keep all the versions they want.',
+  :words<always they>;
+
+first-last
+  '[09:29] and are they always Int?',
+  :words<always they>, :all;
 
 first-last
   '[13:52] 404 for the win!',

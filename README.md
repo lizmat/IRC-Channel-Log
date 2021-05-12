@@ -142,6 +142,10 @@ entries
 
 .say for $channel.entries(:starts-with<m:>);    # starting with text
 
+.say for $channel.entries(:contains<foo>);      # containing string
+
+.say for $channel.entries(:words<foo>);         # containing word
+
 .say for $channel.entries(:nicks<lizmat>);      # for one or more nicks
 
 .say for $channel.entries(
@@ -159,6 +163,10 @@ If no (valid) named arguments are specified, then **all** entries from the log w
 
 The following named arguments are supported:
 
+### :all
+
+The `all` named argument can only be used in combination with the `contains` and `words` named arguments. If specified with a true value, it will force entries to only be selected if **all** conditions are true.
+
 ### :contains
 
 ```raku
@@ -168,11 +176,16 @@ $channel.entries(:contains<question>);
 # "question" or "answer"
 $channel.entries(:contains<question answer>);
 
+# "question" or "answer"
+$channel.entries(:contains<question answer>, :ignorecase);
+
 # "question" and "answer"
 $channel.entries(:contains<question answer>, :all);
 ```
 
 The `contains` named argument allows specification of one or more strings that an entry should contain. By default, an entry should only contain one of the specified strings to be selected. If you want an entry to contain **all** strings, then an additional `:all` named argument can be specified (with a true value).
+
+If comparisons need to be done in an case-insensitive manner, then the `ignorecase` named argument can be specified with a true value.
 
 Since this only applies to conversational entries, any additional setting of the `conversation` or `control` named arguments are ignored.
 
@@ -206,6 +219,10 @@ $channel.entries(:@dates);              # multiple dates
 ```
 
 The `dates` named argument allows one to specify the date(s) from which entries should be selected. Dates can be specified in anything that will stringify in the YYYY-MM-DD format.
+
+### :ignorecase
+
+The `ignorecase` named argument can only be used in combination with the `starts-with`, `contains` and `words` named arguments. If specified with a true value, it will do all comparisons in a case-insensitive manner.
 
 ### :matches
 
@@ -242,11 +259,38 @@ The `reverse` named argument allows one to specify the order in which entries wi
 # starts with "m:"
 $channel.entries(:starts-with<m:>);
 
+# starts with "how" in any case
+$channel.entries(:starts-with<how>, :ignorecase);
+
 # starts with "m:" or "j:"
 $channel.entries(:starts-with<m: j:>);
 ```
 
 The `start-with` named argument allows specification of one or more strings that an entry should start with.
+
+If comparisons need to be done in an case-insensitive manner, then the `ignorecase` named argument can be specified with a true value.
+
+Since this only applies to conversational entries, any additional setting of the `conversation` or `control` named arguments are ignored.
+
+### :words
+
+```raku
+# contains the word "foo"
+$channel.entries(:words<foo>);
+
+# contains the word "foo" or "bar"
+$channel.entries(:words<foo bar>);
+
+# contains the word "foo" or the word "bar" in any case
+$channel.entries(:words<foo bar>, :ignorecase);
+
+# contains the word "foo" *and* "bar"
+$channel.entries(:words<foo bar>, :all);
+```
+
+The `words` named argument allows specification of one or more words that an entry should contain. By default, an entry should only contain one of the specified words to be selected. If you want an entry to contain **all** words, then an additional `:all` named argument can be specified (with a true value).
+
+If comparisons need to be done in an case-insensitive manner, then the `ignorecase` named argument can be specified with a true value.
 
 Since this only applies to conversational entries, any additional setting of the `conversation` or `control` named arguments are ignored.
 
