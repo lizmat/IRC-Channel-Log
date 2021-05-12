@@ -2,7 +2,7 @@ use Test;
 use IRC::Log::Colabti;
 use IRC::Channel::Log;
 
-plan 36;
+plan 49;
 
 my $logdir := $?FILE.IO.sibling('raku');
 my $state  := $?FILE.IO.sibling('state');
@@ -28,37 +28,44 @@ is +@nicks, 260, 'did we get correct number of nicks';
 is @nicks.sort.skip.head, "APic", 'is the first real nick ok';
 is @nicks.sort.tail, "|Sno|", 'is the last nick ok';
 
-is $channel.entries.elems, 1229,
-  'did we get correct total entries';
-is $channel.entries(:control).elems, 766,
-  'did we get correct number of control messages';
-is $channel.entries(:conversation).elems, 463,
-  'did we get correct number of  messages';
+for False, True -> $reverse {
+    is $channel.entries(:$reverse).elems, 1229,
+      'did we get correct total entries';
+    is $channel.entries(:control, :$reverse).elems, 766,
+      'did we get correct number of control messages';
+    is $channel.entries(:conversation, :$reverse).elems, 463,
+      'did we get correct number of  messages';
 
-is $channel.entries(:nicks<lizmat>).elems, 118,
-  'did we get correct number of entries by lizmat';
-is $channel.entries(:control, :nicks<lizmat>).elems, 1,
-  'did we get correct number of control messages by lizmat';
-is $channel.entries(:conversation, :nicks<lizmat>).elems, 117,
-  'did we get correct number of conversation messages by lizmat';
+    is $channel.entries(:nicks<lizmat>, :$reverse).elems, 118,
+      'did we get correct number of entries by lizmat';
 
-is $channel.entries(:dates<2021-04-24>, :nicks<lizmat>).elems, 49,
-  'did we get correct number of entries by lizmat on 2021-04-24';
-is $channel.entries(
-  :dates("2021-04-20".Date .. "2021-04-23".Date), :nicks<lizmat>
-).elems, 69, 'correct number of entries by lizmat from Date range';
-is $channel.entries(:nicks<lizmat japhb>).elems, 146,
-  'correct number of entries by lizmat or japhb';
+    is $channel.entries(:control, :nicks<lizmat>, :$reverse).elems, 1,
+      'did we get correct number of control messages by lizmat';
+    is $channel.entries(:conversation, :nicks<lizmat>, :$reverse).elems, 117,
+      'did we get correct number of conversation messages by lizmat';
 
-is $channel.entries(:contains<answer>).elems, 4,
-  'correct number of entries with text "answer"';
-is $channel.entries(:contains<question answer>).elems, 12,
-  'correct number of entries with text "question" or "answer"';
-is $channel.entries(:contains<question answer>, :all).elems, 2,
-  'correct number of entries with text "question" and "answer"';
+    is $channel.entries(
+      :dates<2021-04-24>, :nicks<lizmat>, :$reverse
+    ).elems, 49,
+      'did we get correct number of entries by lizmat on 2021-04-24';
+    is $channel.entries(
+      :dates("2021-04-20".Date .. "2021-04-23".Date), :nicks<lizmat>, :reverse
+    ).elems, 69, 'correct number of entries by lizmat from Date range';
+    is $channel.entries(:nicks<lizmat japhb>, :$reverse).elems, 146,
+      'correct number of entries by lizmat or japhb';
 
-is $channel.entries(:matches(/ [^ | \s+] \d\d+ [\s+ | $] /)).elems, 9,
-  'correct number of whitespaced multi-digit numbers';
+    is $channel.entries(:contains<answer>, :$reverse).elems, 4,
+      'correct number of entries with text "answer"';
+    is $channel.entries(:contains<question answer>, :$reverse).elems, 12,
+      'correct number of entries with text "question" or "answer"';
+    is $channel.entries(:contains<question answer>, :all, :$reverse).elems, 2,
+      'correct number of entries with text "question" and "answer"';
+
+    is $channel.entries(
+      :matches(/ [^ | \s+] \d\d+ [\s+ | $] /), :$reverse
+    ).elems, 9,
+      'correct number of whitespaced multi-digit numbers';
+}
 
 is $channel.this-date('2021-04-23'), '2021-04-23', 'did we get this date';
 is $channel.this-date('2021-04-22'), '2021-04-23', 'did we get next date';

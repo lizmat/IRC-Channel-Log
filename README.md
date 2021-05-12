@@ -126,7 +126,9 @@ entries
 -------
 
 ```raku
-.say for $channel.entries;   # all entries for this channel
+.say for $channel.entries;             # all entries in chronological order
+
+.say for $channel.entries(:reverse);   # in reverse chronological order
 
 .say for $channel.entries(:contains<question>); # containing text
 
@@ -224,6 +226,15 @@ $channel.entries(:nicks<lizmat japhb>);  # limit to "lizmat" or "japhb"
 ```
 
 The `nicks` named argument allows one to specify one or more nicks to indicate which entries should be selected.
+
+### :reverse
+
+```raku
+.say for $channel.entries(:reverse);   # all messages, most recent first
+.say for $channel.entries(:!reverse);  # all messages, oldest first
+```
+
+The `reverse` named argument allows one to specify the order in which entries will be returned. If specified with a true value, it will return the most recent entries first, in reverse chronological order.
 
 ### :starts-with
 

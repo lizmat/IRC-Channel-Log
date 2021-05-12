@@ -4,7 +4,7 @@ use Array::Sorted::Util:ver<0.0.6>:auth<cpan:ELIZABETH>;
 use JSON::Fast:ver<0.15>;
 use String::Color:ver<0.0.6>:auth<cpan:ELIZABETH>;
 
-class IRC::Channel::Log:ver<0.0.12>:auth<cpan:ELIZABETH> {
+class IRC::Channel::Log:ver<0.0.13>:auth<cpan:ELIZABETH> {
     has IO() $.logdir    is required is built(:bind);
     has      $.class     is required is built(:bind);
     has      &.generator is required is built(:bind);
@@ -14,8 +14,11 @@ class IRC::Channel::Log:ver<0.0.12>:auth<cpan:ELIZABETH> {
     has str  @.years       is built(False);
     has      @.problems    is built(False);
     has String::Color $!sc;
-    has      @!logs;
-    has      %!nicks;
+    has      @!logs;   # log objects, same order as @!dates
+    has      %!nicks;  # hash of hash of entries
+             # |- nick
+             #     |- date
+             #         |- entries
 
     # IO for file containing persistent color information
     method !colors-json() {
@@ -142,35 +145,45 @@ class IRC::Channel::Log:ver<0.0.12>:auth<cpan:ELIZABETH> {
           !! self.entries(|%_).grep: !*.control
     }
 
-    # :dates *and* :nicks selection
-    multi method entries(IRC::Channel::Log:D: :$dates!, :$nicks!) {
-        %!nicks{$nicks<>}{$dates<>}.map: { .Slip with $_ }
-    }
-    multi method entries(IRC::Channel::Log:D: :@dates!, :$nicks!) {
-        %!nicks{$nicks<>}{@dates.sort}.map: { .Slip with $_ }
-    }
-    multi method entries(IRC::Channel::Log:D: :$dates!, :@nicks!) {
-        @nicks == 1
-          ?? %!nicks{@nicks[0]}{$dates<>}.map: { .Slip with $_ }
-          !! %!nicks{@nicks}{$dates<>}.map({ .Slip with $_ })
-               .sort: *.target
-    }
-    multi method entries(IRC::Channel::Log:D: :@dates!, :@nicks!) {
-        @nicks == 1
-          ?? %!nicks{@nicks[0]}{@dates.sort}.map: { .Slip with $_ }
-          !! %!nicks{@nicks}{@dates}.map({ .Slip with $_ })
-               .sort: *.target
-    }
-
-    # just :dates selection
-    multi method entries(IRC::Channel::Log:D: :$dates!) {
-        $dates<>.map: -> $date {
-            with finds(@!dates, $date) -> $pos {
-                @!logs[$pos].entries.Slip
+    # Both dates and nicks as arrays
+    method !dates-nicks(@dates, @nicks) {
+        if %!nicks{@nicks}.grep: *.defined -> @date-hashes {
+            if @dates.sort -> @sorted-dates {
+                @sorted-dates.map: -> $date {
+                    (@date-hashes.map: {
+                        .Slip with .{$date} }
+                    ).sort(*.target).Slip
+                }
             }
         }
     }
-    multi method entries(IRC::Channel::Log:D: :@dates!) {
+
+    # Both dates and nicks as arrays in reverse order
+    method !dates-nicks-reverse(@dates, @nicks) {
+        if %!nicks{@nicks}.grep: *.defined -> @date-hashes {
+            if @dates.sort.reverse -> @sorted-dates {
+                @sorted-dates.map: -> $date {
+                    (@date-hashes.map: {
+                        .List.reverse.Slip with .{$date} }
+                    ).sort(*.target).reverse.Slip
+                }
+            }
+        }
+    }
+
+    # :dates *and* :nicks selection
+    multi method entries(IRC::Channel::Log:D:
+      :$dates! is raw,
+      :$nicks! is raw,
+      :$reverse
+    ) {
+        $reverse
+          ?? self!dates-nicks-reverse($dates.List, $nicks.List)
+          !! self!dates-nicks($dates.List, $nicks.List)
+    }
+
+    # Just dates as array
+    method !dates(@dates) {
         @dates.sort.map: -> $date {
             with finds(@!dates, $date) -> $pos {
                 @!logs[$pos].entries.Slip
@@ -178,21 +191,62 @@ class IRC::Channel::Log:ver<0.0.12>:auth<cpan:ELIZABETH> {
         }
     }
 
-    # just :nicks selection
-    multi method entries(IRC::Channel::Log:D: :@nicks!) {
-        @nicks == 1
-          ?? %!nicks{@nicks[0]}.map(*.sort(*.key)).map(*.value.Slip)
-          !! %!nicks{@nicks}.map(*.values).map(*.Slip).map(*.Slip)
-               .sort: *.target
+    # Just dates as array in reverse order
+    method !dates-reverse(@dates) {
+        @dates.sort.reverse.map: -> $date {
+            with finds(@!dates, $date) -> $pos {
+                @!logs[$pos].entries.reverse.Slip
+            }
+        }
     }
-    multi method entries(IRC::Channel::Log:D: :$nicks!) {
-        %!nicks{$nicks<>}.map(*.values).map(*.Slip).map(*.Slip)
-          .sort: *.target
+
+    # just :dates selection
+    multi method entries(IRC::Channel::Log:D:
+      :$dates! is raw,
+      :$reverse
+    ) {
+        $reverse
+          ?? self!dates-reverse($dates.List)
+          !! self!dates($dates.List)
+    }
+
+    # Just nicks as array
+    method !nicks(@nicks) {
+        if %!nicks{@nicks}.grep: *.defined -> @date-hashes {
+            @!dates.map: -> $date {
+                (@date-hashes.map: {
+                    .Slip with .{$date} }
+                ).Slip
+            }
+        }
+    }
+
+    # Just nicks as array in reverse order
+    method !nicks-reverse(@nicks) {
+        if %!nicks{@nicks}.grep: *.defined -> @date-hashes {
+            @!dates.reverse.map: -> $date {
+                (@date-hashes.map: {
+                    .List.reverse.Slip with .{$date}
+                }).sort(*.target).reverse.Slip
+            }
+        }
+    }
+
+    # just :nicks selection
+    multi method entries(IRC::Channel::Log:D:
+      :$nicks! is raw,
+      :$reverse
+    ) {
+        $reverse
+          ?? self!nicks-reverse($nicks.List)
+          !! self!nicks($nicks.List)
     }
 
     # just all of them
-    multi method entries(IRC::Channel::Log:D: ) {
-        @!logs.map: *.entries.Slip
+    multi method entries(IRC::Channel::Log:D: :$reverse) {
+        $reverse
+          ?? @!logs.reverse.map: *.entries.List.reverse.Slip
+          !! @!logs.map: *.entries.Slip
     }
 
 #-------------------------------------------------------------------------------
@@ -483,7 +537,9 @@ in YYYY-MM-DD format) of which there are entries available.
 
 =begin code :lang<raku>
 
-.say for $channel.entries;   # all entries for this channel
+.say for $channel.entries;             # all entries in chronological order
+
+.say for $channel.entries(:reverse);   # in reverse chronological order
 
 .say for $channel.entries(:contains<question>); # containing text
 
@@ -613,6 +669,19 @@ $channel.entries(:nicks<lizmat japhb>);  # limit to "lizmat" or "japhb"
 
 The C<nicks> named argument allows one to specify one or more nicks
 to indicate which entries should be selected.
+
+=head3 :reverse
+
+=begin code :lang<raku>
+
+.say for $channel.entries(:reverse);   # all messages, most recent first
+.say for $channel.entries(:!reverse);  # all messages, oldest first
+
+=end code
+
+The C<reverse> named argument allows one to specify the order in which entries
+will be returned.  If specified with a true value, it will return the most
+recent entries first, in reverse chronological order.
 
 =head3 :starts-with
 
