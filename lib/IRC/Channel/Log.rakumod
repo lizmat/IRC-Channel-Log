@@ -4,7 +4,7 @@ use Array::Sorted::Util:ver<0.0.6>:auth<cpan:ELIZABETH>;
 use JSON::Fast:ver<0.15>;
 use String::Color:ver<0.0.6>:auth<cpan:ELIZABETH>;
 
-class IRC::Channel::Log:ver<0.0.15>:auth<cpan:ELIZABETH> {
+class IRC::Channel::Log:ver<0.0.16>:auth<cpan:ELIZABETH> {
     has IO() $.logdir    is required is built(:bind);
     has      $.class     is required is built(:bind);
     has      &.generator is required is built(:bind);
@@ -76,6 +76,13 @@ class IRC::Channel::Log:ver<0.0.15>:auth<cpan:ELIZABETH> {
 
 #-------------------------------------------------------------------------------
 # Filters
+
+    multi method dates(IRC::Channel::Log:D: :$contains!, :$reverse) {
+        ($reverse ?? (^@!dates).reverse !! ^@!dates).map: -> int $pos {
+            @!dates[$pos] if @!logs[$pos].raw.contains: $contains, |%_;
+        }
+    }
+    multi method dates(IRC::Channel::Log:D:) { @!dates }
 
     # :starts-with post-processing filters
     multi method entries(IRC::Channel::Log:D:
@@ -201,7 +208,7 @@ class IRC::Channel::Log:ver<0.0.15>:auth<cpan:ELIZABETH> {
     # :conversation post-processing filter
     multi method entries(IRC::Channel::Log:D: :$conversation!) {
         $conversation
-          ?? self.entries(|%_).grep: *.conversation
+          ?? self.entries(|%_).grep:  *.conversation
           !! self.entries(|%_).grep: !*.conversation
     }
 
@@ -262,7 +269,7 @@ class IRC::Channel::Log:ver<0.0.15>:auth<cpan:ELIZABETH> {
     method !dates-reverse(@dates) {
         @dates.sort.reverse.map: -> $date {
             with finds(@!dates, $date) -> $pos {
-                @!logs[$pos].entries.reverse.Slip
+                @!logs[$pos].entries.List.reverse.Slip
             }
         }
     }
@@ -595,10 +602,16 @@ be active.
 
 say $channel.dates;          # the dates for which there are logs available
 
+say $channel.dates(:contains<foo>, :ignorecase);  # logs that have "foo"
+
 =end code
 
 The C<dates> instance method returns a sorted list of dates (as strings
 in YYYY-MM-DD format) of which there are entries available.
+
+It optionally takes a C<contains> named argument to select those dates that
+contain the given string to search for.  This can be used to narrow down the
+number of dates that would be search with the C<entries> method.
 
 =head2 entries
 

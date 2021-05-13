@@ -2,6 +2,10 @@ Revision history for IRC-Channel-Log
 
 {{$NEXT}}
 
+0.0.16  2021-05-13T17:08:33+02:00
+    - Add :contains named argument to "dates" method
+    - Fix issue with :dates argument on .entries
+
 0.0.15  2021-05-13T12:43:50+02:00
     - Changed semantics for :words to << \w+ >>
     - Optimized single word :words case a bit, needs much more work

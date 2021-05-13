@@ -2,7 +2,7 @@ use Test;
 use IRC::Log::Colabti;
 use IRC::Channel::Log;
 
-plan 79;
+plan 81;
 
 my $logdir := $?FILE.IO.sibling('raku');
 my $state  := $?FILE.IO.sibling('state');
@@ -21,10 +21,14 @@ isa-ok $channel, IRC::Channel::Log;
 #.say for $channel.entries(:words<with>);
 #=finish
 
-my @dates = $channel.dates;
+my str @dates = $channel.dates;
 is +@dates, 2, 'did we get 2 dates';
 is @dates.head, '2021-04-23', 'is the first date ok';
 is @dates.tail, '2021-04-24', 'is the last date ok';
+
+my str @dates-with-artifact = $channel.dates(:contains<artifact>);
+is +@dates-with-artifact, 1, 'did we get 1 date with "artifact"';
+is @dates-with-artifact.head, '2021-04-23', 'did we get correct date';
 
 my @problems := $channel.problems;
 is +@problems, 0, 'did we get correct number of problems';
