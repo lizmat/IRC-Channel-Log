@@ -118,13 +118,9 @@ dates
 
 ```raku
 say $channel.dates;          # the dates for which there are logs available
-
-say $channel.dates(:contains<foo>, :ignorecase);  # logs that have "foo"
 ```
 
 The `dates` instance method returns a sorted list of dates (as strings in YYYY-MM-DD format) of which there are entries available.
-
-It optionally takes a `contains` named argument to select those dates that contain the given string to search for. This can be used to narrow down the number of dates that would be search with the `entries` method.
 
 entries
 -------
@@ -222,7 +218,7 @@ my @dates = Date.today ... Date.today.earlier(:3days);
 $channel.entries(:@dates);              # multiple dates
 ```
 
-The `dates` named argument allows one to specify the date(s) from which entries should be selected. Dates can be specified in anything that will stringify in the YYYY-MM-DD format.
+The `dates` named argument allows one to specify the date(s) from which entries should be selected. Dates can be specified in anything that will stringify in the YYYY-MM-DD format, but are expected to be in ascending sort order.
 
 ### :ignorecase
 

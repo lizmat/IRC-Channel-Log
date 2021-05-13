@@ -4,7 +4,7 @@ use Array::Sorted::Util:ver<0.0.6>:auth<cpan:ELIZABETH>;
 use JSON::Fast:ver<0.15>;
 use String::Color:ver<0.0.6>:auth<cpan:ELIZABETH>;
 
-class IRC::Channel::Log:ver<0.0.16>:auth<cpan:ELIZABETH> {
+class IRC::Channel::Log:ver<0.0.17>:auth<cpan:ELIZABETH> {
     has IO() $.logdir    is required is built(:bind);
     has      $.class     is required is built(:bind);
     has      &.generator is required is built(:bind);
@@ -77,13 +77,6 @@ class IRC::Channel::Log:ver<0.0.16>:auth<cpan:ELIZABETH> {
 #-------------------------------------------------------------------------------
 # Filters
 
-    multi method dates(IRC::Channel::Log:D: :$contains!, :$reverse) {
-        ($reverse ?? (^@!dates).reverse !! ^@!dates).map: -> int $pos {
-            @!dates[$pos] if @!logs[$pos].raw.contains: $contains, |%_;
-        }
-    }
-    multi method dates(IRC::Channel::Log:D:) { @!dates }
-
     # :starts-with post-processing filters
     multi method entries(IRC::Channel::Log:D:
       :starts-with(@needle)!,
@@ -122,7 +115,7 @@ class IRC::Channel::Log:ver<0.0.16>:auth<cpan:ELIZABETH> {
                 my $text := $entry.text;
                 $all
                  ?? !@needle.first: { !$text.contains($_, :$ignorecase) }
-                 !!  @needle.first: {  $text.contains($_, :$ignorecase) }
+                 !! ?@needle.first: {  $text.contains($_, :$ignorecase) }
             }
         }
     }
@@ -148,24 +141,29 @@ class IRC::Channel::Log:ver<0.0.16>:auth<cpan:ELIZABETH> {
         if @needle == 1 {
             self.entries(:words(@needle.head), :$ignorecase, |%_)
         }
-        elsif $ignorecase {
-            my @needle-fc = @needle.map: *.fc;
-            self.entries(|%_).grep: -> $entry {
-                if $entry.conversation {
-                    my str @words = $entry.text.words.map: *.fc;
-                    $all
-                     ?? !@needle-fc.first: { $_ ∉ @words }
-                     !!  @needle-fc.first: { $_ ∈ @words }
+        elsif @needle {
+            my @regex = $ignorecase
+              ?? @needle.map: -> str $needle { /:i << $needle >> / }
+              !! @needle.map: -> str $needle { /   << $needle >> / }
+
+            if $all {
+                self.entries(|%_).grep: -> $entry {
+                    if $entry.conversation {
+                        my $text := $entry.text;
+                        $entry.conversation
+                          && !@needle.first({!$text.contains($_, :$ignorecase)})
+                          && !@regex.first({ !$text.contains($_) }, :k).defined
+                    }
                 }
             }
-        }
-        else {
-            self.entries(|%_).grep: -> $entry {
-                if $entry.conversation {
-                    my str @words = $entry.text.words;
-                    $all
-                     ?? !@needle.first: { $_ ∉ @words }
-                     !!  @needle.first: { $_ ∈ @words }
+            else {
+                self.entries(|%_).grep: -> $entry {
+                    if $entry.conversation {
+                        my $text := $entry.text;
+                        $entry.conversation
+                          && @needle.first({ $text.contains($_, :$ignorecase) })
+                          && @regex.first({ $text.contains($_) }, :k).defined
+                    }
                 }
             }
         }
@@ -222,7 +220,7 @@ class IRC::Channel::Log:ver<0.0.16>:auth<cpan:ELIZABETH> {
     # Both dates and nicks as arrays
     method !dates-nicks(@dates, @nicks) {
         if %!nicks{@nicks}.grep: *.defined -> @date-hashes {
-            if @dates.sort -> @sorted-dates {
+            if @dates -> @sorted-dates {
                 @sorted-dates.map: -> $date {
                     (@date-hashes.map: {
                         .Slip with .{$date} }
@@ -235,7 +233,7 @@ class IRC::Channel::Log:ver<0.0.16>:auth<cpan:ELIZABETH> {
     # Both dates and nicks as arrays in reverse order
     method !dates-nicks-reverse(@dates, @nicks) {
         if %!nicks{@nicks}.grep: *.defined -> @date-hashes {
-            if @dates.sort.reverse -> @sorted-dates {
+            if @dates.reverse -> @sorted-dates {
                 @sorted-dates.map: -> $date {
                     (@date-hashes.map: {
                         .List.reverse.Slip with .{$date} }
@@ -258,7 +256,7 @@ class IRC::Channel::Log:ver<0.0.16>:auth<cpan:ELIZABETH> {
 
     # Just dates as array
     method !dates(@dates) {
-        @dates.sort.map: -> $date {
+        @dates.map: -> $date {
             with finds(@!dates, $date) -> $pos {
                 @!logs[$pos].entries.Slip
             }
@@ -267,7 +265,7 @@ class IRC::Channel::Log:ver<0.0.16>:auth<cpan:ELIZABETH> {
 
     # Just dates as array in reverse order
     method !dates-reverse(@dates) {
-        @dates.sort.reverse.map: -> $date {
+        @dates.reverse.map: -> $date {
             with finds(@!dates, $date) -> $pos {
                 @!logs[$pos].entries.List.reverse.Slip
             }
@@ -602,16 +600,10 @@ be active.
 
 say $channel.dates;          # the dates for which there are logs available
 
-say $channel.dates(:contains<foo>, :ignorecase);  # logs that have "foo"
-
 =end code
 
 The C<dates> instance method returns a sorted list of dates (as strings
 in YYYY-MM-DD format) of which there are entries available.
-
-It optionally takes a C<contains> named argument to select those dates that
-contain the given string to search for.  This can be used to narrow down the
-number of dates that would be search with the C<entries> method.
 
 =head2 entries
 
@@ -736,7 +728,8 @@ $channel.entries(:@dates);              # multiple dates
 
 The C<dates> named argument allows one to specify the date(s) from
 which entries should be selected.  Dates can be specified in anything
-that will stringify in the YYYY-MM-DD format.
+that will stringify in the YYYY-MM-DD format, but are expected to be in
+ascending sort order.
 
 =head3 :ignorecase
 

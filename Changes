@@ -2,6 +2,10 @@ Revision history for IRC-Channel-Log
 
 {{$NEXT}}
 
+0.0.17  2021-05-13T23:05:40+02:00
+    - Specification of :dates are expected to be in ascending order
+    - Remove :contains named argument to "dates" method, it was a bad idea
+
 0.0.16  2021-05-13T17:08:33+02:00
     - Add :contains named argument to "dates" method
     - Fix issue with :dates argument on .entries
