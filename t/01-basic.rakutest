@@ -18,7 +18,7 @@ is $channel.problems.elems, 0,
   'there should be no problems';
 isa-ok $channel, IRC::Channel::Log;
 
-#.say for $channel.entries(:words<always they>);
+#.say for $channel.entries(:words<with>);
 #=finish
 
 my @dates = $channel.dates;
@@ -75,7 +75,7 @@ for False, True -> $reverse {
     is $channel.entries(:contains<this answer>, :all, :$reverse).elems, 1,
       'correct number of entries with text "this" and "answer"';
 
-    is $channel.entries(:words<with>, :$reverse).elems, 28,
+    is $channel.entries(:words<with>, :$reverse).elems, 30,
       'correct number of entries with the word "with"';
     is $channel.entries(:words<they always>, :$reverse).elems, 12,
       'correct number of entries with the word "they" or "always"';

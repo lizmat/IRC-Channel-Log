@@ -2,6 +2,10 @@ Revision history for IRC-Channel-Log
 
 {{$NEXT}}
 
+0.0.15  2021-05-13T12:43:50+02:00
+    - Changed semantics for :words to << \w+ >>
+    - Optimized single word :words case a bit, needs much more work
+
 0.0.14  2021-05-12T22:40:32+02:00
     - Add support for :words argument to .entries
     - Add support for :ignorecase for :starts-with, :contains, :words

@@ -4,7 +4,7 @@ use Array::Sorted::Util:ver<0.0.6>:auth<cpan:ELIZABETH>;
 use JSON::Fast:ver<0.15>;
 use String::Color:ver<0.0.6>:auth<cpan:ELIZABETH>;
 
-class IRC::Channel::Log:ver<0.0.14>:auth<cpan:ELIZABETH> {
+class IRC::Channel::Log:ver<0.0.15>:auth<cpan:ELIZABETH> {
     has IO() $.logdir    is required is built(:bind);
     has      $.class     is required is built(:bind);
     has      &.generator is required is built(:bind);
@@ -138,7 +138,10 @@ class IRC::Channel::Log:ver<0.0.14>:auth<cpan:ELIZABETH> {
       :conversation($),  # ignored
       :control($),       # ignored
     ) {
-        if $ignorecase {
+        if @needle == 1 {
+            self.entries(:words(@needle.head), :$ignorecase, |%_)
+        }
+        elsif $ignorecase {
             my @needle-fc = @needle.map: *.fc;
             self.entries(|%_).grep: -> $entry {
                 if $entry.conversation {
@@ -167,16 +170,19 @@ class IRC::Channel::Log:ver<0.0.14>:auth<cpan:ELIZABETH> {
             :control($),       # ignored
     ) {
         if $ignorecase {
-            my $needle-fc := $needle.fc;
+            my $regex := /:i << $needle >> /;
             self.entries(|%_).grep: {
                 .conversation
-                  && .text.words.map(*.fc).first($needle-fc)
+                  && .text.contains($needle, :ignorecase)
+                  && .text.contains($regex)
             }
         }
         else {
+            my $regex := / << $needle >> /;
             self.entries(|%_).grep: {
                 .conversation
-                  && .text.words.first($needle)
+                  && .text.contains($needle)
+                  && .text.contains($regex)
             }
         }
     }
