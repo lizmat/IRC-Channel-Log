@@ -194,7 +194,9 @@ class IRC::Channel::Log:ver<0.0.17>:auth<cpan:ELIZABETH> {
 
             # More than one needle
             else {
-                self.dates-with(@needle, :$dates, :$reverse).map( -> $date {
+                self.dates-with(
+                  @needle, :$dates, :$reverse
+                ).map( -> $date {
                     my @entries := self.log($date).entries.List;
                     ($reverse ?? @entries.reverse !! @entries).grep( -> $entry {
                         if $entry.conversation {
@@ -212,33 +214,44 @@ class IRC::Channel::Log:ver<0.0.17>:auth<cpan:ELIZABETH> {
     # :contains post-processing filters
     multi method entries(IRC::Channel::Log:D:
       :contains($needle)! is raw,
+      :$dates             is raw,
       :$ignorecase,
       :$all,
+      :$reverse,
       :conversation($),  # ignored
       :control($),       # ignored
     ) {
         if $needle.List -> @needle {
             if @needle == 1 {
                 my $needle := @needle[0];
-                self.entries(|%_).grep: {
-                    .conversation && .text.contains($needle, :$ignorecase)
-                }
+                self.dates-with($needle, :$dates, :$reverse).map( -> $date {
+                    my @entries := self.log($date).entries.List;
+                    ($reverse ?? @entries.reverse !! @entries).grep({
+                        .conversation
+                          && .text.contains($needle, :$ignorecase)
+                    }).Slip
+                }).Slip
             }
 
             # More than one needle
             else {
-                self.entries(|%_).grep: -> $entry {
-                    if $entry.conversation {
-                        my $text := $entry.text;
-                        $all
-                         ?? !@needle.first: {
-                                !$text.contains($_, :$ignorecase)
-                            }
-                         !! ?@needle.first: {
-                                $text.contains($_, :$ignorecase)
-                            }
-                    }
-                }
+                self.dates-with(
+                  @needle, :$dates, :$all, :$reverse
+                ).map( -> $date {
+                    my @entries := self.log($date).entries.List;
+                    ($reverse ?? @entries.reverse !! @entries).grep( -> $entry {
+                        if $entry.conversation {
+                            my $text := $entry.text;
+                            $all
+                             ?? !@needle.first: {
+                                    !$text.contains($_, :$ignorecase)
+                                }
+                             !! ?@needle.first: {
+                                    $text.contains($_, :$ignorecase)
+                                }
+                        }
+                    }).Slip
+                }).Slip
             }
         }
     }
