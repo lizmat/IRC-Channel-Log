@@ -247,7 +247,7 @@ class IRC::Channel::Log:ver<0.0.17>:auth<cpan:ELIZABETH> {
                                     !$text.contains($_, :$ignorecase)
                                 }
                              !! ?@needle.first: {
-                                    $text.contains($_, :$ignorecase)
+                                     $text.contains($_, :$ignorecase)
                                 }
                         }
                     }).Slip
@@ -259,30 +259,27 @@ class IRC::Channel::Log:ver<0.0.17>:auth<cpan:ELIZABETH> {
     # :words post-processing filters
     multi method entries(IRC::Channel::Log:D:
       :words($needle)! is raw,
+      :$dates          is raw,
       :$ignorecase,
       :$all,
+      :$reverse,
       :conversation($),  # ignored
       :control($),       # ignored
     ) {
         if $needle.List -> @needle {
             if @needle == 1 {
                 my $needle := @needle[0];
-                if $ignorecase {
-                    my $regex := /:i << $needle >> /;
-                    self.entries(|%_).grep: {
-                        .conversation
-                          && .text.contains($needle, :ignorecase)
-                          && .text.contains($regex)
-                    }
-                }
-                else {
-                    my $regex := / << $needle >> /;
-                    self.entries(|%_).grep: {
-                        .conversation
-                          && .text.contains($needle)
-                          && .text.contains($regex)
-                    }
-                }
+                my $regex  := $ignorecase
+                  ?? /:i << $needle >> /
+                  !! /   << $needle >> /;
+                self.dates-with(
+                  $needle, :$dates, :$reverse
+                ).map( -> $date {
+                    my @entries := self.log($date).entries.List;
+                    ($reverse ?? @entries.reverse !! @entries).grep({
+                        .conversation && .text.contains($regex)
+                    }).Slip
+                }).Slip
             }
 
             # More than one needle
@@ -291,33 +288,30 @@ class IRC::Channel::Log:ver<0.0.17>:auth<cpan:ELIZABETH> {
                   ?? @needle.map: -> str $needle { /:i << $needle >> / }
                   !! @needle.map: -> str $needle { /   << $needle >> / }
 
-                if $all {
-                    self.entries(|%_).grep: -> $entry {
-                        if $entry.conversation {
-                            my $text := $entry.text;
-                            !@needle.first({
-                                !$text.contains($_, :$ignorecase)
-                            }) && !@regex.first({
-                                !$text.contains($_)
-                            }, :k).defined
-                        }
-                    }
-                }
-
-                # Only one of the needles
-                else {
-                    self.entries(|%_).grep: -> $entry {
-                        if $entry.conversation {
-                            my $text := $entry.text;
-                            @needle.first({
-                                $text.contains($_, :$ignorecase)
-                            })
-                            && @regex.first({
-                                $text.contains($_)
-                            }, :k).defined
-                        }
-                    }
-                }
+                self.dates-with(
+                  @needle, :$dates, :$all, :$reverse
+                ).map( -> $date {
+                    my @entries := self.log($date).entries.List;
+                    ($reverse ?? @entries.reverse !! @entries).grep(
+                      $all
+                        ?? -> $entry {
+                               if $entry.conversation {
+                                   my $text := $entry.text;
+                                   !@regex.first({
+                                       !$text.contains($_)
+                                   }, :k).defined
+                               }
+                           }
+                        !! -> $entry {
+                               if $entry.conversation {
+                                   my $text := $entry.text;
+                                   @regex.first({
+                                       $text.contains($_)
+                                   }, :k).defined
+                               }
+                           }
+                    ).Slip
+                }).Slip
             }
         }
     }

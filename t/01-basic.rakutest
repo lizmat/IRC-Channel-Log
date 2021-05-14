@@ -18,7 +18,7 @@ is $channel.problems.elems, 0,
   'there should be no problems';
 isa-ok $channel, IRC::Channel::Log;
 
-#dd $channel.dates-with('artifact');
+#.say for $channel.entries(:words<they always>, :reverse);
 #=finish
 
 my str @dates = $channel.dates;
