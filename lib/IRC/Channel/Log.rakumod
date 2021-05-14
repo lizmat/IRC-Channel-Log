@@ -4,7 +4,7 @@ use Array::Sorted::Util:ver<0.0.6>:auth<cpan:ELIZABETH>;
 use JSON::Fast:ver<0.15>;
 use String::Color:ver<0.0.6>:auth<cpan:ELIZABETH>;
 
-class IRC::Channel::Log:ver<0.0.17>:auth<cpan:ELIZABETH> {
+class IRC::Channel::Log:ver<0.0.18>:auth<cpan:ELIZABETH> {
     has IO() $.logdir    is required is built(:bind);
     has      $.class     is required is built(:bind);
     has      &.generator is required is built(:bind);
@@ -256,6 +256,20 @@ class IRC::Channel::Log:ver<0.0.17>:auth<cpan:ELIZABETH> {
         }
     }
 
+    # Fast non-regex checker whether a string has word-boundaries
+    sub has-word(str $h, str $n, :$ignorecase) {   # XXX multiple occurrences
+        use nqp;
+        my int $pos = $ignorecase
+          ?? nqp::indexic($h,$n,0)
+          !! nqp::index($h,$n,0);
+        !(
+          $pos == -1
+            || ($pos > 0 && nqp::iscclass(nqp::const::CCLASS_WORD,$h,$pos - 1))
+            || (($pos = $pos + nqp::chars($n)) < nqp::chars($h)
+                 && nqp::iscclass(nqp::const::CCLASS_WORD,$h,$pos))
+        )
+    }
+
     # :words post-processing filters
     multi method entries(IRC::Channel::Log:D:
       :words($needle)! is raw,
@@ -269,48 +283,60 @@ class IRC::Channel::Log:ver<0.0.17>:auth<cpan:ELIZABETH> {
         if $needle.List -> @needle {
             if @needle == 1 {
                 my $needle := @needle[0];
-                my $regex  := $ignorecase
-                  ?? /:i << $needle >> /
-                  !! /   << $needle >> /;
                 self.dates-with(
                   $needle, :$dates, :$reverse
                 ).map( -> $date {
-                    my @entries := self.log($date).entries.List;
-                    ($reverse ?? @entries.reverse !! @entries).grep({
-                        .conversation && .text.contains($regex)
-                    }).Slip
+                    my $log := self.log($date);
+                    if has-word($log.raw, $needle) {
+                        my @entries := $log.entries.List;
+                        ($reverse ?? @entries.reverse !! @entries).grep({
+                            .conversation && has-word(.text, $needle)
+                        }).Slip
+                    }
                 }).Slip
             }
 
-            # More than one needle
-            else {
-                my @regex = $ignorecase
-                  ?? @needle.map: -> str $needle { /:i << $needle >> / }
-                  !! @needle.map: -> str $needle { /   << $needle >> / }
-
+            # Want all needles
+            elsif $all {
                 self.dates-with(
                   @needle, :$dates, :$all, :$reverse
                 ).map( -> $date {
-                    my @entries := self.log($date).entries.List;
-                    ($reverse ?? @entries.reverse !! @entries).grep(
-                      $all
-                        ?? -> $entry {
-                               if $entry.conversation {
-                                   my $text := $entry.text;
-                                   !@regex.first({
-                                       !$text.contains($_)
-                                   }, :k).defined
-                               }
-                           }
-                        !! -> $entry {
-                               if $entry.conversation {
-                                   my $text := $entry.text;
-                                   @regex.first({
-                                       $text.contains($_)
-                                   }, :k).defined
-                               }
-                           }
-                    ).Slip
+                    my $log := self.log($date);
+                    my $raw := $log.raw;
+                    unless @needle.first({ !has-word($raw,$_) }, :k).defined {
+                        my @entries := $log.entries.List;
+                        ($reverse ?? @entries.reverse !! @entries).grep(
+                          -> $entry {
+                              if $entry.conversation {
+                                  my $text := $entry.text;
+                                  !@needle.first({
+                                      !has-word($text,$_)
+                                  }, :k).defined
+                              }
+                          }).Slip
+                    }
+                }).Slip
+            }
+
+            # Any needle is ok
+            else {
+                self.dates-with(
+                  @needle, :$dates, :$all, :$reverse
+                ).map( -> $date {
+                    my $log := self.log($date);
+                    my $raw := $log.raw;
+                    if @needle.first({ has-word($raw,$_) }, :k).defined {
+                        my @entries := $log.entries.List;
+                        ($reverse ?? @entries.reverse !! @entries).grep(
+                          -> $entry {
+                              if $entry.conversation {
+                                  my $text := $entry.text;
+                                  @needle.first({
+                                      has-word($text,$_)
+                                  }, :k).defined
+                              }
+                          }).Slip
+                    }
                 }).Slip
             }
         }
@@ -499,7 +525,7 @@ class IRC::Channel::Log:ver<0.0.17>:auth<cpan:ELIZABETH> {
                             }
 
                             # Create mappings for any new nicks
-                            $!sc.add($log.nicks);
+                            $!sc.add($log.nicks.keys);
                         }
                     }
                 }

@@ -1,8 +1,13 @@
 Revision history for IRC-Channel-Log
 
 {{$NEXT}}
+
+0.0.18  2021-05-14T21:03:47+02:00
     - Remove separate .entries candidates for single/multiple needles
     - Add .dates-with method 
+    - Fix issue with .watch-and-update
+    - Handle :dates in .entries inside :starts-with/:contains/:words itself
+    - Added handy quick internal word checker "has-word"
 
 0.0.17  2021-05-13T23:05:40+02:00
     - Specification of :dates are expected to be in ascending order
