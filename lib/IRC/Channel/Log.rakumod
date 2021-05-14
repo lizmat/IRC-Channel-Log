@@ -19,6 +19,8 @@ class IRC::Channel::Log:ver<0.0.17>:auth<cpan:ELIZABETH> {
              # |- nick
              #     |- date
              #         |- entries
+    has Lock $!dates-with-lock;
+    has      %!dates-with;  # hash of dates that have string (as key)
 
     # IO for file containing persistent color information
     method !colors-json() {
@@ -72,10 +74,50 @@ class IRC::Channel::Log:ver<0.0.17>:auth<cpan:ELIZABETH> {
             $!sc := String::Color.new: :&!generator;
             $!sc.add: %!nicks.keys;
         }
+
+        # Other initializations
+        $!dates-with-lock := Lock.new;
     }
 
 #-------------------------------------------------------------------------------
-# Filters
+# Date filters
+
+    # Return the dates that contain a given string in either case
+    method dates-with(IRC::Channel::Log:D:
+      Str:D $string,
+            :$dates is raw,
+            :$reverse
+    ) {
+
+        my $found;
+        $!dates-with-lock.protect: {
+            $found := $_ with %!dates-with{$string};
+        }
+
+        # Alas, we need to do the work
+        without $found {
+            my str @found = (^@!dates).hyper.map: -> int $pos {
+                @!dates[$pos]
+                  if @!logs[$pos].raw.contains($string, :ignorecase)
+            }
+
+            # Save the work
+            $found := $!dates-with-lock.protect: {
+                %!dates-with{$string} := @found;
+            }
+        }
+
+        with $dates {
+            my str @dates = $dates.List.grep: * ∈ $found;
+            $reverse ?? @dates.reverse !! @dates
+        }
+        else {
+            $reverse ?? $found.reverse !! $found
+        }
+    }
+
+#-------------------------------------------------------------------------------
+# Entry filters
 
     # :starts-with post-processing filters
     multi method entries(IRC::Channel::Log:D:

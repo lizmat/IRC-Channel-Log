@@ -2,7 +2,7 @@ use Test;
 use IRC::Log::Colabti;
 use IRC::Channel::Log;
 
-plan 79;
+plan 82;
 
 my $logdir := $?FILE.IO.sibling('raku');
 my $state  := $?FILE.IO.sibling('state');
@@ -18,7 +18,7 @@ is $channel.problems.elems, 0,
   'there should be no problems';
 isa-ok $channel, IRC::Channel::Log;
 
-#.say for $channel.entries(:contains<atrifact>);
+#dd $channel.dates-with('artifact');
 #=finish
 
 my str @dates = $channel.dates;
@@ -33,6 +33,13 @@ my @nicks = $channel.nicks;
 is +@nicks, 260, 'did we get correct number of nicks';
 is @nicks.sort.skip.head, "APic", 'is the first real nick ok';
 is @nicks.sort.tail, "|Sno|", 'is the last nick ok';
+
+@dates = $channel.dates-with('artifact');
+is +@dates, 1, 'did we get 1 date';
+is @dates.head, '2021-04-23', 'is the artifact date ok';
+
+@dates = $channel.dates-with('artifact', :dates<2021-04-24>);
+is +@dates, 0, 'did we get 0 dates';
 
 #-------------------------------------------------------------------------------
 # Tests on number of elements selected

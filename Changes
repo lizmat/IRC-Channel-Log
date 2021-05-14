@@ -1,26 +1,27 @@
 Revision history for IRC-Channel-Log
 
 {{$NEXT}}
-    - Remove separate entries candidates for single/multiple needles
+    - Remove separate .entries candidates for single/multiple needles
+    - Add .dates-with method 
 
 0.0.17  2021-05-13T23:05:40+02:00
     - Specification of :dates are expected to be in ascending order
-    - Remove :contains named argument to "dates" method, it was a bad idea
+    - Remove :contains to .dates method, it was a bad idea
 
 0.0.16  2021-05-13T17:08:33+02:00
-    - Add :contains named argument to "dates" method
+    - Add :contains to .dates method
     - Fix issue with :dates argument on .entries
 
 0.0.15  2021-05-13T12:43:50+02:00
-    - Changed semantics for :words to << \w+ >>
-    - Optimized single word :words case a bit, needs much more work
+    - Change semantics for :words to << \w+ >>
+    - Optimize single word :words case a bit, needs much more work
 
 0.0.14  2021-05-12T22:40:32+02:00
-    - Add support for :words argument to .entries
+    - Add support for :words to .entries
     - Add support for :ignorecase for :starts-with, :contains, :words
 
 0.0.13  2021-05-12T14:21:26+02:00
-    - Add support for :reverse argument to .entries
+    - Add support for :reverse to .entries
     - Also cleanup many .entries candidates
 
 0.0.12  2021-05-10T13:28:41+02:00
@@ -30,42 +31,42 @@ Revision history for IRC-Channel-Log
     - More simplification
     - Up dependency on String::Color
     - Make the $!sc attribute private
-    - Add required :generator to pass on to String::Color
+    - Add required :generator to "new" to pass on to String::Color
     - Remove all nick-mapped related functionality
-    - Add "colors" method for threadsafe returning of nick to color mapping
-    - Add "active" method for denoting whether a channel is considered active
+    - Add .colors for threadsafe returning of nick to color mapping
+    - Add .active for denoting whether a channel is considered active
 
 0.0.10  2021-05-08T23:53:22+02:00
-    - Added dependencies on JSON::Fast, RandomColor, String::Color
-    = Added "state" named argument to specify directory to keep state
-    - Added "sc" named argument to use specific String::Color instance
-    - Added "nick-mapper" named argument to specify nick color representation
-    - Added "nick-mapped" method to thread-safe copy of nick to HTML mapping
-    - Added "shutdown" method to save state.
-    - Added "sc" method to return String::Color instance being used
+    - Add dependencies on JSON::Fast, RandomColor, String::Color
+    = Add :state to .new to specify directory to keep state
+    - Add :sc to .new to use specific String::Color instance
+    - Add :nick-mapper to .new to specify nick color representation
+    - Add :nick-mapped to .new to thread-safe copy of nick to HTML mapping
+    - Add .shutdown to save state.
+    - Add .sc to return String::Color instance being used
 
 0.0.9  2021-05-06T13:21:45+02:00
     - Up dependency on Array::Sorted::Util to fix race condition
     - Up dependency of IRC::Log::Colabti for testing
 
 0.0.8  2021-05-05T15:11:03+02:00
-    - Added is-first-date-of-(month|year) methods
+    - Add .is-first-date-of-(month|year)
 
 0.0.7  2021-05-05T11:49:43+02:00
     - Removed Object::Delayed functionality: if a client wants to do
       stuff in an async fashion, it's *their* responsibility to do so
 
 0.0.6  2021-05-04T21:15:30+02:00
-    - Added support for .log method
+    - Added support for .log
 
 0.0.5  2021-05-04T20:55:14+02:00
-    - Added support for .this-date method
+    - Added support for .this-date
 
 0.0.4  2021-05-03T11:09:48+02:00
     - .new now returns a catchupped object, duh!
 
 0.0.3  2021-05-03T11:06:04+02:00
-    - Added .next-date / .prev-date methods
+    - Added .next-date / .prev-date
     - Added support for :batch and :degree with .new
     - Added dependency on Object::Delayed
     - .new now returns a slacked object, for faster startup-times of servers
@@ -74,8 +75,8 @@ Revision history for IRC-Channel-Log
     - Upped API dependency to 0.19 (introducing entries as IterationBuffers)
     - Added dependency on Array::Sorted::Util
     - Logs are now kept as a list, sorted with @!dates
-    - Added years attribute
-    - Added watch-and-update method
+    - Add "years" attribute
+    - Add .watch-and-update
 
 0.0.1  2021-04-28T13:48:38+02:00
     - Initial version
