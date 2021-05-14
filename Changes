@@ -1,6 +1,7 @@
 Revision history for IRC-Channel-Log
 
 {{$NEXT}}
+    - Remove separate entries candidates for single/multiple needles
 
 0.0.17  2021-05-13T23:05:40+02:00
     - Specification of :dates are expected to be in ascending order

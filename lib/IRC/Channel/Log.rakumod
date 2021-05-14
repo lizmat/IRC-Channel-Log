@@ -79,115 +79,127 @@ class IRC::Channel::Log:ver<0.0.17>:auth<cpan:ELIZABETH> {
 
     # :starts-with post-processing filters
     multi method entries(IRC::Channel::Log:D:
-      :starts-with(@needle)!,
+      :starts-with($needle)! is raw,
       :$ignorecase,
       :conversation($),  # ignored
       :control($),       # ignored
     ) {
-        self.entries(|%_).grep: -> $entry {
-            if $entry.conversation {
-                my $text := $entry.text;
-                @needle.first: {  $text.starts-with($_, :$ignorecase) }
+        if $needle.List -> @needle {
+            if @needle == 1 {
+                my $needle := @needle[0];
+                self.entries(|%_).grep: {
+                    .conversation && .text.starts-with($needle, :$ignorecase)
+                }
             }
-        }
-    }
-    multi method entries(IRC::Channel::Log:D:
-      Str:D :starts-with($needle)!,
-            :$ignorecase,
-            :conversation($),  # ignored
-            :control($),       # ignored
-    ) {
-        self.entries(|%_).grep: {
-            .conversation && .text.starts-with($needle, :$ignorecase)
+
+            # More than one needle
+            else {
+                self.entries(|%_).grep: -> $entry {
+                    if $entry.conversation {
+                        my $text := $entry.text;
+                        @needle.first: { $text.starts-with($_, :$ignorecase) }
+                    }
+                }
+            }
         }
     }
 
     # :contains post-processing filters
     multi method entries(IRC::Channel::Log:D:
-      :contains(@needle)!,
+      :contains($needle)! is raw,
       :$ignorecase,
       :$all,
       :conversation($),  # ignored
       :control($),       # ignored
     ) {
-        self.entries(|%_).grep: -> $entry {
-            if $entry.conversation {
-                my $text := $entry.text;
-                $all
-                 ?? !@needle.first: { !$text.contains($_, :$ignorecase) }
-                 !! ?@needle.first: {  $text.contains($_, :$ignorecase) }
+        if $needle.List -> @needle {
+            if @needle == 1 {
+                my $needle := @needle[0];
+                self.entries(|%_).grep: {
+                    .conversation && .text.contains($needle, :$ignorecase)
+                }
             }
-        }
-    }
-    multi method entries(IRC::Channel::Log:D:
-      Str:D :contains($needle)!,
-            :$ignorecase,
-            :conversation($),  # ignored
-            :control($),       # ignored
-    ) {
-        self.entries(|%_).grep: {
-            .conversation && .text.contains($needle, :$ignorecase)
+
+            # More than one needle
+            else {
+                self.entries(|%_).grep: -> $entry {
+                    if $entry.conversation {
+                        my $text := $entry.text;
+                        $all
+                         ?? !@needle.first: {
+                                !$text.contains($_, :$ignorecase)
+                            }
+                         !! ?@needle.first: {
+                                $text.contains($_, :$ignorecase)
+                            }
+                    }
+                }
+            }
         }
     }
 
     # :words post-processing filters
     multi method entries(IRC::Channel::Log:D:
-      :words(@needle)!,
+      :words($needle)! is raw,
       :$ignorecase,
       :$all,
       :conversation($),  # ignored
       :control($),       # ignored
     ) {
-        if @needle == 1 {
-            self.entries(:words(@needle.head), :$ignorecase, |%_)
-        }
-        elsif @needle {
-            my @regex = $ignorecase
-              ?? @needle.map: -> str $needle { /:i << $needle >> / }
-              !! @needle.map: -> str $needle { /   << $needle >> / }
+        if $needle.List -> @needle {
+            if @needle == 1 {
+                my $needle := @needle[0];
+                if $ignorecase {
+                    my $regex := /:i << $needle >> /;
+                    self.entries(|%_).grep: {
+                        .conversation
+                          && .text.contains($needle, :ignorecase)
+                          && .text.contains($regex)
+                    }
+                }
+                else {
+                    my $regex := / << $needle >> /;
+                    self.entries(|%_).grep: {
+                        .conversation
+                          && .text.contains($needle)
+                          && .text.contains($regex)
+                    }
+                }
+            }
 
-            if $all {
-                self.entries(|%_).grep: -> $entry {
-                    if $entry.conversation {
-                        my $text := $entry.text;
-                        $entry.conversation
-                          && !@needle.first({!$text.contains($_, :$ignorecase)})
-                          && !@regex.first({ !$text.contains($_) }, :k).defined
-                    }
-                }
-            }
+            # More than one needle
             else {
-                self.entries(|%_).grep: -> $entry {
-                    if $entry.conversation {
-                        my $text := $entry.text;
-                        $entry.conversation
-                          && @needle.first({ $text.contains($_, :$ignorecase) })
-                          && @regex.first({ $text.contains($_) }, :k).defined
+                my @regex = $ignorecase
+                  ?? @needle.map: -> str $needle { /:i << $needle >> / }
+                  !! @needle.map: -> str $needle { /   << $needle >> / }
+
+                if $all {
+                    self.entries(|%_).grep: -> $entry {
+                        if $entry.conversation {
+                            my $text := $entry.text;
+                            !@needle.first({
+                                !$text.contains($_, :$ignorecase)
+                            }) && !@regex.first({
+                                !$text.contains($_)
+                            }, :k).defined
+                        }
                     }
                 }
-            }
-        }
-    }
-    multi method entries(IRC::Channel::Log:D:
-      Str:D :words($needle)!,
-            :$ignorecase,
-            :conversation($),  # ignored
-            :control($),       # ignored
-    ) {
-        if $ignorecase {
-            my $regex := /:i << $needle >> /;
-            self.entries(|%_).grep: {
-                .conversation
-                  && .text.contains($needle, :ignorecase)
-                  && .text.contains($regex)
-            }
-        }
-        else {
-            my $regex := / << $needle >> /;
-            self.entries(|%_).grep: {
-                .conversation
-                  && .text.contains($needle)
-                  && .text.contains($regex)
+
+                # Only one of the needles
+                else {
+                    self.entries(|%_).grep: -> $entry {
+                        if $entry.conversation {
+                            my $text := $entry.text;
+                            @needle.first({
+                                $text.contains($_, :$ignorecase)
+                            })
+                            && @regex.first({
+                                $text.contains($_)
+                            }, :k).defined
+                        }
+                    }
+                }
             }
         }
     }
