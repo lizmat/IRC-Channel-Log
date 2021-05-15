@@ -2,6 +2,14 @@ Revision history for IRC-Channel-Log
 
 {{$NEXT}}
 
+0.0.19  2021-05-15T20:19:27+02:00
+    - Handle :dates in .entries inside :matches
+    - Simplify some helper subs
+    - Fix "has-word" functionality to continue after initial fail
+    - Handle :nicks and :dates in .entries candidates properly
+    - Upped dependency on String::Color: we need .aliases
+    - Added .aliases-for-nicks method to return aliases of a nick
+
 0.0.18  2021-05-14T21:03:47+02:00
     - Remove separate .entries candidates for single/multiple needles
     - Add .dates-with method 

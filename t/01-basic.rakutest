@@ -2,7 +2,7 @@ use Test;
 use IRC::Log::Colabti;
 use IRC::Channel::Log;
 
-plan 82;
+plan 83;
 
 my $logdir := $?FILE.IO.sibling('raku');
 my $state  := $?FILE.IO.sibling('state');
@@ -18,7 +18,9 @@ is $channel.problems.elems, 0,
   'there should be no problems';
 isa-ok $channel, IRC::Channel::Log;
 
-#.say for $channel.entries(:words<they always>, :reverse);
+#.say for $channel.entries(
+#  :dates("2021-04-20".Date .. "2021-04-23".Date), :nicks<lizmat>
+#);
 #=finish
 
 my str @dates = $channel.dates;
@@ -65,7 +67,7 @@ for False, True -> $reverse {
     ).elems, 49,
       'did we get correct number of entries by lizmat on 2021-04-24';
     is $channel.entries(
-      :dates("2021-04-20".Date .. "2021-04-23".Date), :nicks<lizmat>, :reverse
+      :dates("2021-04-20".Date .. "2021-04-23".Date), :nicks<lizmat>, :$reverse
     ).elems, 69, 'correct number of entries by lizmat from Date range';
     is $channel.entries(:nicks<lizmat japhb>, :$reverse).elems, 146,
       'correct number of entries by lizmat or japhb';
@@ -196,6 +198,11 @@ first-last
   :matches(/ [^ | \s+] \d\d+ [\s+ | $] /);
 
 #-------------------------------------------------------------------------------# Utility methods tests
+
+is-deeply
+  $channel.aliases-for-nick("simcop2387"),
+  (my str @ = <simcop2387 simcop2387_>),
+  'Did we get all the aliases for the nick';
 
 is $channel.this-date('2021-04-23'), '2021-04-23', 'did we get this date';
 is $channel.this-date('2021-04-22'), '2021-04-23', 'did we get next date';

@@ -2,9 +2,9 @@ use v6.*;
 
 use Array::Sorted::Util:ver<0.0.6>:auth<cpan:ELIZABETH>;
 use JSON::Fast:ver<0.15>;
-use String::Color:ver<0.0.6>:auth<cpan:ELIZABETH>;
+use String::Color:ver<0.0.7>:auth<cpan:ELIZABETH>;
 
-class IRC::Channel::Log:ver<0.0.18>:auth<cpan:ELIZABETH> {
+class IRC::Channel::Log:ver<0.0.19>:auth<cpan:ELIZABETH> {
     has IO() $.logdir    is required is built(:bind);
     has      $.class     is required is built(:bind);
     has      &.generator is required is built(:bind);
@@ -24,13 +24,13 @@ class IRC::Channel::Log:ver<0.0.18>:auth<cpan:ELIZABETH> {
 
     # IO for file containing persistent color information
     method !colors-json() {
-        $!state 
+        $!state
           ?? $!state.add("colors.json")
           !! Nil
     }
 
     # Not done creating the object yet
-    method TWEAK(
+    submethod TWEAK(
       :$batch = 6,
       :$degree = Kernel.cpu-cores,
     --> Nil) {
@@ -82,39 +82,17 @@ class IRC::Channel::Log:ver<0.0.18>:auth<cpan:ELIZABETH> {
 #-------------------------------------------------------------------------------
 # Date filters
 
-    multi sub on-both-dates(\one, str @two) {
-        on-both-dates((my str @ = one.List), @two)
-    }
-    multi sub on-both-dates(str @one, \two) {
-        on-both-dates(@one, (my str @ = two.List))
-    }
-    multi sub on-both-dates(\one, \two) {
-        on-both-dates((my str @ = one.List), (my str @ = two.List))
-    }
-    multi sub on-both-dates(str @one, str @two) {
-        @one < @two
-          ?? @one.grep(* ∈ @two)
-          !! @two.grep(* ∈ @one)
+    # Return dates that are in both
+    sub on-both-dates(str @one, @two) {
+        my str @dates = @two.map(*.Str).grep(* ∈ @one)
     }
 
-    multi sub on-either-date(\one, str @two) {
-        on-either-date((my str @ = one.List), @two)
-    }
-    multi sub on-either-date(str @one, \two) {
-        on-either-date(@one, (my str @ = two.List))
-    }
-    multi sub on-either-date(\one, \two) {
-        on-either-date((my str @ = one.List), (my str @ = two.List))
-    }
-    multi sub on-either-date(str @one, str @two) {
-        my str @dates = @one;
-        for @two -> str $date {
-            inserts @dates, $date, :pos($_) without finds @dates, $date;
-        }
-        @dates
+    # Insert dates into given str array if not there yet
+    sub insert-dates(str @dates, @to-add --> Nil) {
+        inserts @dates, .Str for @to-add;
     }
 
-    # Return the dates that contain a given string in either case
+    # Return the dates that contain a given string in any case
     multi method dates-with(IRC::Channel::Log:D:
        @needle is copy,
       :$dates  is raw,
@@ -130,18 +108,19 @@ class IRC::Channel::Log:ver<0.0.18>:auth<cpan:ELIZABETH> {
                     }
                 }
                 else {
-                    @dates = on-either-date(@dates, self.dates-with($_))
-                      for @needle;
+                    insert-dates(@dates, self.dates-with($_)) for @needle;
                 }
 
                 $reverse ?? @dates.reverse !! @dates
             }
         }
     }
+
+    # Return the dates that contain given strings in any case
     multi method dates-with(IRC::Channel::Log:D:
       Str:D $needle,
-            :$dates is raw,
-            :$reverse
+           :$dates is raw,
+           :$reverse
     ) {
         my $found := $!dates-with-lock.protect: { %!dates-with{$needle} }
 
@@ -159,19 +138,63 @@ class IRC::Channel::Log:ver<0.0.18>:auth<cpan:ELIZABETH> {
         }
 
         # Limit dates if needed
-        with $dates {
-            my str @dates = on-both-dates($dates.List, $found);
-            $reverse ?? @dates.reverse !! @dates
+        $found := on-both-dates($found, .List) with $dates;
+
+        $reverse ?? $found.reverse !! $found
+    }
+
+    # Return the dates that match regex
+    multi method dates-with(IRC::Channel::Log:D:
+      Regex:D $regex,
+             :$dates is raw,
+             :$reverse
+    ) {
+        my $name  := $regex.gist;
+        my $found := $!dates-with-lock.protect: { %!dates-with{$name} }
+
+        # Alas, we need to do *all* the work for later caching
+        without $found {
+            my str @found = (^@!dates).hyper.map: -> int $pos {
+                @!dates[$pos] if @!logs[$pos].raw.contains($regex)
+            }
+
+            # Save the work
+            $found := $!dates-with-lock.protect: {
+                %!dates-with{$name} := @found;
+            }
         }
-        else {
-            $reverse ?? $found.reverse !! $found
-        }
+
+        # Limit dates if needed
+        $found := on-both-dates($found, .List) with $dates;
+
+        $reverse ?? $found.reverse !! $found
     }
 
 #-------------------------------------------------------------------------------
 # Entry filters
 
+    # Filter the given entries on the given nick(s)
+    method !filter-nicks(\nicks, \entries) {
+        my @nicks := nicks.List;
+        if @nicks == 1 {
+            my $nick := @nicks.head;
+            entries.grep(*.nick eq $nick)
+        }
+        else {
+            entries.grep: -> $entry {
+                my $nick := $entry.nick;
+                @nicks.first(* eq $nick)
+            }
+        }
+    }
+
     # :starts-with post-processing filters
+    multi method entries(IRC::Channel::Log:D:
+      :$starts-with! is raw,
+      :$nicks!       is raw,
+    ) {
+        self!filter-nicks($nicks, self.entries(:$starts-with, |%_))
+    }
     multi method entries(IRC::Channel::Log:D:
       :starts-with($needle)! is raw,
       :$dates                is raw,
@@ -212,6 +235,12 @@ class IRC::Channel::Log:ver<0.0.18>:auth<cpan:ELIZABETH> {
     }
 
     # :contains post-processing filters
+    multi method entries(IRC::Channel::Log:D:
+      :$contains! is raw,
+      :$nicks!    is raw,
+    ) {
+        self!filter-nicks($nicks, self.entries(:$contains, |%_))
+    }
     multi method entries(IRC::Channel::Log:D:
       :contains($needle)! is raw,
       :$dates             is raw,
@@ -257,20 +286,64 @@ class IRC::Channel::Log:ver<0.0.18>:auth<cpan:ELIZABETH> {
     }
 
     # Fast non-regex checker whether a string has word-boundaries
-    sub has-word(str $h, str $n, :$ignorecase) {   # XXX multiple occurrences
+    sub has-wordc(str $h, str $n) {
         use nqp;
-        my int $pos = $ignorecase
-          ?? nqp::indexic($h,$n,0)
-          !! nqp::index($h,$n,0);
-        !(
-          $pos == -1
-            || ($pos > 0 && nqp::iscclass(nqp::const::CCLASS_WORD,$h,$pos - 1))
-            || (($pos = $pos + nqp::chars($n)) < nqp::chars($h)
-                 && nqp::iscclass(nqp::const::CCLASS_WORD,$h,$pos))
-        )
+        my int $pos;
+        my int $hc = nqp::chars($h);  # chars in haystack
+        my int $nc = nqp::chars($n);  # chars in needle
+
+        nqp::until(
+          nqp::iseq_i(($pos = nqp::index($h,$n,$pos)),-1)  # not found
+            || (
+                 (nqp::iseq_i($pos,0)                   # borders at start
+                   || nqp::not_i(nqp::iscclass(         # ok word bound at start
+                        nqp::const::CCLASS_WORD,$h,nqp::sub_i($pos,1)
+                      ))
+                 )
+              && (nqp::iseq_i(nqp::add_i($pos,$nc),$hc) # borders at end
+                   || nqp::not_i(nqp::iscclass(         # ok word bound at end
+                        nqp::const::CCLASS_WORD,$h,nqp::add_i($pos,$nc)
+                      ))
+                 )
+               ),
+          ($pos = nqp::add_i($pos,$nc))                 # try again
+        );
+
+        nqp::hllbool(nqp::isne_i($pos,-1))
+    }
+    sub has-wordic(str $h, str $n) {  # case insensitive version, otherwise same
+        use nqp;
+        my int $pos;
+        my int $hc = nqp::chars($h);  # chars in haystack
+        my int $nc = nqp::chars($n);  # chars in needle
+
+        nqp::until(
+          nqp::iseq_i(($pos = nqp::indexic($h,$n,$pos)),-1)  # not found
+            || (
+                 (nqp::iseq_i($pos,0)                   # borders at start
+                   || nqp::not_i(nqp::iscclass(         # ok word bound at start
+                        nqp::const::CCLASS_WORD,$h,nqp::sub_i($pos,1)
+                      ))
+                 )
+              && (nqp::iseq_i(nqp::add_i($pos,$nc),$hc) # borders at end
+                   || nqp::not_i(nqp::iscclass(         # ok word bound at end
+                        nqp::const::CCLASS_WORD,$h,nqp::add_i($pos,$nc)
+                      ))
+                 )
+               ),
+          ($pos = nqp::add_i($pos,$nc))                 # try again
+        );
+
+        nqp::hllbool(nqp::isne_i($pos,-1))
     }
 
     # :words post-processing filters
+    multi method entries(IRC::Channel::Log:D:
+      :$words! is raw,
+      :$nicks! is raw,
+    ) {
+        self!filter-nicks($nicks, self.entries(:$words, |%_))
+    }
     multi method entries(IRC::Channel::Log:D:
       :words($needle)! is raw,
       :$dates          is raw,
@@ -280,6 +353,7 @@ class IRC::Channel::Log:ver<0.0.18>:auth<cpan:ELIZABETH> {
       :conversation($),  # ignored
       :control($),       # ignored
     ) {
+        my &has-word := $ignorecase ?? &has-wordic !! &has-wordc;
         if $needle.List -> @needle {
             if @needle == 1 {
                 my $needle := @needle[0];
@@ -344,64 +418,107 @@ class IRC::Channel::Log:ver<0.0.18>:auth<cpan:ELIZABETH> {
 
     # :matches post-processing filter
     multi method entries(IRC::Channel::Log:D:
+      :$matches! is raw,
+      :$nicks!   is raw,
+    ) {
+        self!filter-nicks($nicks, self.entries(:$matches, |%_))
+    }
+    multi method entries(IRC::Channel::Log:D:
       Regex:D :matches($regex)!,
+              :$dates is raw,
+              :$reverse,
               :conversation($),  # ignored
               :control($),       # ignored
     ) {
-        self.entries(|%_).grep: {
-            .conversation && .text.contains($regex)
-        }
+        self.dates-with(
+          $regex, :$dates, :$reverse
+        ).map( -> $date {
+            my @entries := self.log($date).entries.List;
+            ($reverse ?? @entries.reverse !! @entries).grep({
+                .conversation && .text.contains($regex)
+            }).Slip
+        }).Slip
     }
 
-    # :conversation post-processing filter
-    multi method entries(IRC::Channel::Log:D: :$conversation!) {
-        $conversation
-          ?? self.entries(|%_).grep:  *.conversation
-          !! self.entries(|%_).grep: !*.conversation
-    }
-
-    # :control post-processing filter
-    multi method entries(IRC::Channel::Log:D: :$control!) {
-        $control
-          ?? self.entries(|%_).grep: *.control
-          !! self.entries(|%_).grep: !*.control
-    }
-
-    # Both dates and nicks as arrays
-    method !dates-nicks(@dates, @nicks) {
-        if %!nicks{@nicks}.grep: *.defined -> @date-hashes {
-            if @dates -> @sorted-dates {
-                @sorted-dates.map: -> $date {
-                    (@date-hashes.map: {
-                        .Slip with .{$date} }
-                    ).sort(*.target).Slip
-                }
-            }
-        }
-    }
-
-    # Both dates and nicks as arrays in reverse order
-    method !dates-nicks-reverse(@dates, @nicks) {
-        if %!nicks{@nicks}.grep: *.defined -> @date-hashes {
-            if @dates.reverse -> @sorted-dates {
-                @sorted-dates.map: -> $date {
-                    (@date-hashes.map: {
-                        .List.reverse.Slip with .{$date} }
-                    ).sort(*.target).reverse.Slip
-                }
-            }
-        }
-    }
-
-    # :dates *and* :nicks selection
+    # :nicks selection
     multi method entries(IRC::Channel::Log:D:
-      :$dates! is raw,
       :$nicks! is raw,
-      :$reverse
+      :$dates  is raw,
+      :$ignorecase,
+      :$reverse,
+      :$conversation,
+      :$control,
     ) {
-        $reverse
-          ?? self!dates-nicks-reverse($dates.List, $nicks.List)
-          !! self!dates-nicks($dates.List, $nicks.List)
+        my &has-word := $ignorecase ?? &has-wordic !! &has-wordc;
+        if $nicks.List -> @nicks {
+            if @nicks == 1 {
+                my $nick := @nicks[0];
+                sub grepper-conversation($entry) {
+                    $entry.conversation && $nick eq $entry.nick
+                }
+                sub grepper-control($entry) {
+                    $entry.control && $nick eq $entry.nick
+                }
+                sub grepper-all($entry) { $nick eq $entry.nick }
+
+                my &grepper := $conversation
+                  ?? &grepper-conversation
+                  !! $control
+                    ?? &grepper-control
+                    !! &grepper-all;
+
+                self.dates-with(
+                  $nick, :$dates, :$reverse
+                ).map( -> $date {
+                    my $log := self.log($date);
+                    if has-word($log.raw, $nick) {
+                        ($reverse
+                          ?? $log.entries.List.reverse
+                          !! $log.entries.List
+                        ).grep(&grepper).Slip
+                    }
+                }).Slip
+            }
+
+            # Any nick is ok
+            else {
+                sub grepper-conversation($entry) {
+                    if $entry.conversation {
+                        my $nick := $entry.nick;
+                        @nicks.first({ $_ eq $nick }, :k).defined
+                    }
+                }
+                sub grepper-control($entry) {
+                    if $entry.control {
+                        my $nick := $entry.nick;
+                        @nicks.first({ $_ eq $nick }, :k).defined
+                    }
+                }
+                sub grepper-all($entry) {
+                    my $nick := $entry.nick;
+                    @nicks.first({ $_ eq $nick }, :k).defined
+                }
+
+                my &grepper := $conversation
+                  ?? &grepper-conversation
+                  !! $control
+                    ?? &grepper-control
+                    !! &grepper-all;
+
+                self.dates-with(
+                  @nicks, :$dates, :$reverse
+                ).map( -> $date {
+                    my $log := self.log($date);
+                    my $raw := $log.raw;
+                    if @nicks.first({ has-word($raw,$_) }, :k).defined {
+                        ($reverse
+                          ?? $log.entries.List.reverse
+                          !! $log.entries.List
+                        ).grep(&grepper).Slip
+                    }
+                }).Slip
+            }
+        }
     }
 
     # Just dates as array
@@ -422,46 +539,36 @@ class IRC::Channel::Log:ver<0.0.18>:auth<cpan:ELIZABETH> {
         }
     }
 
-    # just :dates selection
+    # :dates selection
     multi method entries(IRC::Channel::Log:D:
       :$dates! is raw,
+      :$conversation,
+      :$control,
       :$reverse
     ) {
-        $reverse
+        my $entries := $reverse
           ?? self!dates-reverse($dates.List)
-          !! self!dates($dates.List)
+          !! self!dates($dates.List);
+
+        $conversation
+          ?? $entries.grep(*.conversation)
+          !! $control
+            ?? $entries.grep(*.control)
+            !! $entries
     }
 
-    # Just nicks as array
-    method !nicks(@nicks) {
-        if %!nicks{@nicks}.grep: *.defined -> @date-hashes {
-            @!dates.map: -> $date {
-                (@date-hashes.map: {
-                    .Slip with .{$date} }
-                ).Slip
-            }
-        }
+    # :conversation post-processing filter
+    multi method entries(IRC::Channel::Log:D: :$conversation!) {
+        $conversation
+          ?? self.entries(|%_).grep:  *.conversation
+          !! self.entries(|%_).grep: !*.conversation
     }
 
-    # Just nicks as array in reverse order
-    method !nicks-reverse(@nicks) {
-        if %!nicks{@nicks}.grep: *.defined -> @date-hashes {
-            @!dates.reverse.map: -> $date {
-                (@date-hashes.map: {
-                    .List.reverse.Slip with .{$date}
-                }).sort(*.target).reverse.Slip
-            }
-        }
-    }
-
-    # just :nicks selection
-    multi method entries(IRC::Channel::Log:D:
-      :$nicks! is raw,
-      :$reverse
-    ) {
-        $reverse
-          ?? self!nicks-reverse($nicks.List)
-          !! self!nicks($nicks.List)
+    # :control post-processing filter
+    multi method entries(IRC::Channel::Log:D: :$control!) {
+        $control
+          ?? self.entries(|%_).grep: *.control
+          !! self.entries(|%_).grep: !*.control
     }
 
     # just all of them
@@ -478,6 +585,10 @@ class IRC::Channel::Log:ver<0.0.18>:auth<cpan:ELIZABETH> {
         $!state
           ?? !$!state.add("inactive").e
           !! True
+    }
+
+    method aliases-for-nick(IRC::Channel::Log:D: Str:D $nick) {
+        $!sc.aliases($nick)
     }
 
     method years(IRC::Channel::Log:D:) {
@@ -501,7 +612,7 @@ class IRC::Channel::Log:ver<0.0.18>:auth<cpan:ELIZABETH> {
                         }
                     }
 
-                    # A log file has changed 
+                    # A log file has changed
                     whenever $!logdir.add($year).watch -> $event {
                         my $path := $event.path.IO;
                         if $path.f && $!class.IO2Date($path) -> $Date {
@@ -743,6 +854,17 @@ The C<active> instance method returns whether the channel is considered to
 be active.  If a C<state> directory has been specified, and that directory
 contains a file named "inactive", then the channel is considered to B<not>
 be active.
+
+=head2 aliases-for-nick
+
+=begin code :lang<raku>
+
+my @aliases = $channel.aliases-for-nick($nick);
+
+=end code
+
+The C<aliases-for-nick> instance method returns a sorted list of nicks that
+are assumed to be aliases (aka, have the same color) for the given nick.
 
 =head2 dates
 

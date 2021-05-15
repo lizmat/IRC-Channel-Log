@@ -113,6 +113,15 @@ say "$channel.name() is active" if $channel.active;
 
 The `active` instance method returns whether the channel is considered to be active. If a `state` directory has been specified, and that directory contains a file named "inactive", then the channel is considered to **not** be active.
 
+aliases-for-nick
+----------------
+
+```raku
+my @aliases = $channel.aliases-for-nick($nick);
+```
+
+The `aliases-for-nick` instance method returns a sorted list of nicks that are assumed to be aliases (aka, have the same color) for the given nick.
+
 dates
 -----
 
