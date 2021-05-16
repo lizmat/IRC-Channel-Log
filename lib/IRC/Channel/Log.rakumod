@@ -4,7 +4,7 @@ use Array::Sorted::Util:ver<0.0.6>:auth<cpan:ELIZABETH>;
 use JSON::Fast:ver<0.15>;
 use String::Color:ver<0.0.7>:auth<cpan:ELIZABETH>;
 
-class IRC::Channel::Log:ver<0.0.19>:auth<cpan:ELIZABETH> {
+class IRC::Channel::Log:ver<0.0.20>:auth<cpan:ELIZABETH> {
     has IO() $.logdir    is required is built(:bind);
     has      $.class     is required is built(:bind);
     has      &.generator is required is built(:bind);
@@ -295,15 +295,34 @@ class IRC::Channel::Log:ver<0.0.19>:auth<cpan:ELIZABETH> {
         nqp::until(
           nqp::iseq_i(($pos = nqp::index($h,$n,$pos)),-1)  # not found
             || (
-                 (nqp::iseq_i($pos,0)                   # borders at start
-                   || nqp::not_i(nqp::iscclass(         # ok word bound at start
-                        nqp::const::CCLASS_WORD,$h,nqp::sub_i($pos,1)
-                      ))
+                 (nqp::iseq_i($pos,0)  # borders at start
+                   || nqp::isne_i(     # different class of chars at boundary
+                        nqp::iscclass(
+                          nqp::const::CCLASS_WORD,
+                          $h,
+                          $pos
+                        ),
+                        nqp::iscclass(
+                          nqp::const::CCLASS_WORD,
+                          $h,
+                          nqp::sub_i($pos,1)
+                        )
+                      )
                  )
-              && (nqp::iseq_i(nqp::add_i($pos,$nc),$hc) # borders at end
-                   || nqp::not_i(nqp::iscclass(         # ok word bound at end
-                        nqp::const::CCLASS_WORD,$h,nqp::add_i($pos,$nc)
-                      ))
+              && (nqp::iseq_i(nqp::add_i($pos,$nc),$hc)  # borders at end
+                   || nqp::isne_i(     # different class of chars at boundary
+                        nqp::iscclass(
+                          nqp::const::CCLASS_WORD,
+                          $h,
+                          nqp::add_i($pos,$nc)
+                        ),
+                        nqp::iscclass(
+                          nqp::const::CCLASS_WORD,
+                          $h,
+                          nqp::sub_i(nqp::add_i($pos,$nc),1)
+                        )
+                      )
+
                  )
                ),
           ($pos = nqp::add_i($pos,$nc))                 # try again
@@ -320,15 +339,34 @@ class IRC::Channel::Log:ver<0.0.19>:auth<cpan:ELIZABETH> {
         nqp::until(
           nqp::iseq_i(($pos = nqp::indexic($h,$n,$pos)),-1)  # not found
             || (
-                 (nqp::iseq_i($pos,0)                   # borders at start
-                   || nqp::not_i(nqp::iscclass(         # ok word bound at start
-                        nqp::const::CCLASS_WORD,$h,nqp::sub_i($pos,1)
-                      ))
+                 (nqp::iseq_i($pos,0)  # borders at start
+                   || nqp::isne_i(     # different class of chars at boundary
+                        nqp::iscclass(
+                          nqp::const::CCLASS_WORD,
+                          $h,
+                          $pos
+                        ),
+                        nqp::iscclass(
+                          nqp::const::CCLASS_WORD,
+                          $h,
+                          nqp::sub_i($pos,1)
+                        )
+                      )
                  )
-              && (nqp::iseq_i(nqp::add_i($pos,$nc),$hc) # borders at end
-                   || nqp::not_i(nqp::iscclass(         # ok word bound at end
-                        nqp::const::CCLASS_WORD,$h,nqp::add_i($pos,$nc)
-                      ))
+              && (nqp::iseq_i(nqp::add_i($pos,$nc),$hc)  # borders at end
+                   || nqp::isne_i(     # different class of chars at boundary
+                        nqp::iscclass(
+                          nqp::const::CCLASS_WORD,
+                          $h,
+                          nqp::add_i($pos,$nc)
+                        ),
+                        nqp::iscclass(
+                          nqp::const::CCLASS_WORD,
+                          $h,
+                          nqp::sub_i(nqp::add_i($pos,$nc),1)
+                        )
+                      )
+
                  )
                ),
           ($pos = nqp::add_i($pos,$nc))                 # try again

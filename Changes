@@ -2,6 +2,9 @@ Revision history for IRC-Channel-Log
 
 {{$NEXT}}
 
+0.0.20  2021-05-16T19:40:37+02:00
+    - Make :words checking a bit smarter on non-word characters in needle
+
 0.0.19  2021-05-15T20:19:27+02:00
     - Handle :dates in .entries inside :matches
     - Simplify some helper subs

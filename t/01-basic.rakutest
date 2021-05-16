@@ -19,7 +19,7 @@ is $channel.problems.elems, 0,
 isa-ok $channel, IRC::Channel::Log;
 
 #.say for $channel.entries(
-#  :dates("2021-04-20".Date .. "2021-04-23".Date), :nicks<lizmat>
+#  :words<with>
 #);
 #=finish
 
