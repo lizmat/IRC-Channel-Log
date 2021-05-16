@@ -4,7 +4,7 @@ use Array::Sorted::Util:ver<0.0.6>:auth<cpan:ELIZABETH>;
 use JSON::Fast:ver<0.15>;
 use String::Color:ver<0.0.7>:auth<cpan:ELIZABETH>;
 
-class IRC::Channel::Log:ver<0.0.20>:auth<cpan:ELIZABETH> {
+class IRC::Channel::Log:ver<0.0.21>:auth<cpan:ELIZABETH> {
     has IO() $.logdir    is required is built(:bind);
     has      $.class     is required is built(:bind);
     has      &.generator is required is built(:bind);
@@ -173,10 +173,43 @@ class IRC::Channel::Log:ver<0.0.20>:auth<cpan:ELIZABETH> {
 #-------------------------------------------------------------------------------
 # Entry filters
 
+    multi method entries(IRC::Channel::Log:D:
+      Str:D :after-target($target)!,
+            :$dates is raw,
+            :reverse($),  # ignored, implied by "before-target"
+    ) {
+        my str $target-date = $target.substr(0,10);
+        my str @dates = $dates ?? $dates.List !! @!dates;
+        my $pos := finds @dates, $target-date;
+        @dates.splice: 0, $pos + $pos.defined;
+
+        (
+          self.entries(:dates($target-date), |%_)
+            .grep(*.target gt $target).Slip,
+          self.entries(:@dates, |%_)
+        )
+    }
+
+    multi method entries(IRC::Channel::Log:D:
+      Str:D :before-target($target)!,
+            :$dates is raw,
+            :reverse($),  # ignored, implied by "before-target"
+    ) {
+        my str $target-date = $target.substr(0,10);
+        my str @dates = $dates ?? $dates.List !! @!dates;
+        @dates.splice: finds @dates, $target-date;
+
+        (
+          self.entries(:dates($target-date), |%_)
+            .grep(*.target lt $target).reverse.Slip,
+          self.entries(:@dates, :reverse, |%_)
+        )
+    }
+
     # Filter the given entries on the given nick(s)
     method !filter-nicks(\nicks, \entries) {
-        my @nicks := nicks.List;
-        if @nicks == 1 {
+        my @nicks := nicks.List;    # XXX we know the entries of each nick!
+        if @nicks == 1 {            # XXX so use that, dummy!
             my $nick := @nicks.head;
             entries.grep(*.nick eq $nick)
         }
@@ -962,11 +995,43 @@ the log will be produced: this allows you to do any ad-hoc filtering.
 
 The following named arguments are supported:
 
+=head3 :after-target
+
+=begin code :lang<raku>
+
+$channel.entries(:after-target<2021-04-23Z23:36>);
+
+=end code
+
+The C<after-target> named argument can be used with any of the other named
+arguments (with the exception of C<reverse>, which it overrides as
+C<:!reverse>).  It will limit any entries to those that have a C<target>
+value B<greater> than the value provided.
+
+Targets are formatted as C<YYYY-MM-DDZHH:MM-NNNN> with the C<-NNNN> removed
+if it would have been C<-0000>.
+
 =head3 :all
 
 The C<all> named argument can only be used in combination with the C<contains>
 and C<words> named arguments.  If specified with a true value, it will force
 entries to only be selected if B<all> conditions are true.
+
+=head3 :before-target
+
+=begin code :lang<raku>
+
+$channel.entries(:after-target<2021-04-24Z02:50>);
+
+=end code
+
+The C<before-target> named argument can be used with any of the other named
+arguments (with the exception of C<reverse>, which it overrides as
+C<:reverse>).  It will limit any entries to those that have a C<target>
+value B<smaller> than the value provided.
+
+Targets are formatted as C<YYYY-MM-DDZHH:MM-NNNN> with the C<-NNNN> removed
+if it would have been C<-0000>.
 
 =head3 :contains
 

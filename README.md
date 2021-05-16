@@ -172,9 +172,29 @@ If no (valid) named arguments are specified, then **all** entries from the log w
 
 The following named arguments are supported:
 
+### :after-target
+
+```raku
+$channel.entries(:after-target<2021-04-23Z23:36>);
+```
+
+The `after-target` named argument can be used with any of the other named arguments (with the exception of `reverse`, which it overrides as `:!reverse`). It will limit any entries to those that have a `target` value **greater** than the value provided.
+
+Targets are formatted as `YYYY-MM-DDZHH:MM-NNNN` with the `-NNNN` removed if it would have been `-0000`.
+
 ### :all
 
 The `all` named argument can only be used in combination with the `contains` and `words` named arguments. If specified with a true value, it will force entries to only be selected if **all** conditions are true.
+
+### :before-target
+
+```raku
+$channel.entries(:after-target<2021-04-24Z02:50>);
+```
+
+The `before-target` named argument can be used with any of the other named arguments (with the exception of `reverse`, which it overrides as `:reverse`). It will limit any entries to those that have a `target` value **smaller** than the value provided.
+
+Targets are formatted as `YYYY-MM-DDZHH:MM-NNNN` with the `-NNNN` removed if it would have been `-0000`.
 
 ### :contains
 

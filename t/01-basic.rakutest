@@ -2,7 +2,7 @@ use Test;
 use IRC::Log::Colabti;
 use IRC::Channel::Log;
 
-plan 83;
+plan 87;
 
 my $logdir := $?FILE.IO.sibling('raku');
 my $state  := $?FILE.IO.sibling('state');
@@ -19,7 +19,7 @@ is $channel.problems.elems, 0,
 isa-ok $channel, IRC::Channel::Log;
 
 #.say for $channel.entries(
-#  :words<with>
+#  :after-target<2021-04-23Z23:36>, :words<the>
 #);
 #=finish
 
@@ -91,28 +91,36 @@ for False, True -> $reverse {
     is $channel.entries(:words<they always>, :all, :$reverse).elems, 1,
       'correct number of entries with the word "they" and "always"';
 
+
     is $channel.entries(
       :matches(/ [^ | \s+] \d\d+ [\s+ | $] /), :$reverse
     ).elems, 9,
       'correct number of whitespaced multi-digit numbers';
 }
 
+is $channel.entries(:before-target<2021-04-24Z02:50>, :words<the>).elems, 60,
+  'did we get all entries before the target?';
+is $channel.entries(:after-target<2021-04-23Z23:36>, :words<the>).elems, 79,
+  'did we get all entries before the target?';
+
 #-------------------------------------------------------------------------------
 # Same tests, but now checking on first / last entry
 
-sub first-last($first, $last = $first, |c) {
+sub first-last($first, $last = $first, :$no-reverse, |c) {
     subtest "checking first/last on {c.raku}" => {
-        plan 4;
+        plan $no-reverse ?? 2 !! 4;
 
         is $channel.entries(|c).head.gist, $first,
           'is first entry correct';
         is $channel.entries(:reverse, |c).tail.gist, $first,
-          'is last entry on reverse correct';
+          'is last entry on reverse correct'
+          unless $no-reverse;
 
         is $channel.entries(|c).tail.gist, $last,
           'is last entry correct';
         is $channel.entries(:reverse, |c).head.gist, $last,
-          'is first entry on reverse correct';
+          'is first entry on reverse correct'
+          unless $no-reverse;
     }
 }
 
@@ -191,6 +199,16 @@ first-last
 first-last
   '[09:29] and are they always Int?',
   :words<always they>, :all;
+
+first-last
+  "[23:38] demostanis[m]: if it's any help (it probably isn't) it takes 2 minutes and 12 seconds to compile the rakudo distribution from Gentoo, this is with 56 threads on a 64 thread host.",
+  "[23:44] ^^ Why does that even work?  Why does &?BLOCK go to the given and not to the when?",
+  :no-reverse, :after-target<2021-04-23Z23:36>, :words<the>;
+
+first-last
+  "[02:46] (well, nqp and rakudo probably _could_ be built in parallel, but the makefile isn't set up in such a way that make knows how to do that)",
+  "[09:27] My has has : these kind of keys : '33:A/B' , '9:Y/Q' '117:C/G' and i need to sort by the first number befor the ':'.",
+  :no-reverse, :before-target<2021-04-24Z02:50>, :words<the>;
 
 first-last
   '[13:52] 404 for the win!',

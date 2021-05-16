@@ -2,6 +2,9 @@ Revision history for IRC-Channel-Log
 
 {{$NEXT}}
 
+0.0.21  2021-05-16T21:20:52+02:00
+    - Add support for :before-target and :after-target to .entries
+
 0.0.20  2021-05-16T19:40:37+02:00
     - Make :words checking a bit smarter on non-word characters in needle
 
