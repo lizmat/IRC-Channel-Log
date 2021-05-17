@@ -4,7 +4,7 @@ use Array::Sorted::Util:ver<0.0.6>:auth<cpan:ELIZABETH>;
 use JSON::Fast:ver<0.15>;
 use String::Color:ver<0.0.7>:auth<cpan:ELIZABETH>;
 
-class IRC::Channel::Log:ver<0.0.21>:auth<cpan:ELIZABETH> {
+class IRC::Channel::Log:ver<0.0.22>:auth<cpan:ELIZABETH> {
     has IO() $.logdir    is required is built(:bind);
     has      $.class     is required is built(:bind);
     has      &.generator is required is built(:bind);
@@ -186,7 +186,7 @@ class IRC::Channel::Log:ver<0.0.21>:auth<cpan:ELIZABETH> {
         (
           self.entries(:dates($target-date), |%_)
             .grep(*.target gt $target).Slip,
-          self.entries(:@dates, |%_)
+          self.entries(:@dates, |%_).Slip
         )
     }
 
@@ -202,7 +202,7 @@ class IRC::Channel::Log:ver<0.0.21>:auth<cpan:ELIZABETH> {
         (
           self.entries(:dates($target-date), |%_)
             .grep(*.target lt $target).reverse.Slip,
-          self.entries(:@dates, :reverse, |%_)
+          self.entries(:@dates, :reverse, |%_).Slip
         )
     }
 
