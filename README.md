@@ -157,6 +157,12 @@ entries
 
 .say for $channel.entries(:nicks<lizmat>);      # for one or more nicks
 
+.say for $channel.entries(:before-target($target);  # entries before target
+
+.say for $channel.entries(:after-target($target);   # entries after target
+
+.say for $channel.entries(:around-target($target);  # entries around target
+
 .say for $channel.entries(
   :dates<2021-04-23>,
   :nicks<lizmat japhb>,
@@ -185,6 +191,18 @@ Targets are formatted as `YYYY-MM-DDZHH:MM-NNNN` with the `-NNNN` removed if it 
 ### :all
 
 The `all` named argument can only be used in combination with the `contains` and `words` named arguments. If specified with a true value, it will force entries to only be selected if **all** conditions are true.
+
+### :around-target
+
+```raku
+$channel.entries(:around-target<2021-04-23Z23:36>);  # default 10 entries
+
+$channel.entries(:around-target<2021-04-23Z23:36>, :nr-entries(5));
+```
+
+The `around-target` named argument can be used with any of the other named arguments (with the exception of `reverse`). It will return any entries before and after to the entry with the `target`. By default, **10** entries will be selected before **and** after the target (thus returning a maximum of 21 entries). The `nr-entries` named argument can be used to indicate the number of entries before / after should be fetched.
+
+Targets are formatted as `YYYY-MM-DDZHH:MM-NNNN` with the `-NNNN` removed if it would have been `-0000`.
 
 ### :before-target
 
@@ -272,6 +290,10 @@ $channel.entries(:nicks<lizmat japhb>);  # limit to "lizmat" or "japhb"
 ```
 
 The `nicks` named argument allows one to specify one or more nicks to indicate which entries should be selected.
+
+### :nr-entries
+
+The `nr-entries` named argument can only be used in combination with the `around-target` argument. It specifies how many entries should be fetched before / after the given target.
 
 ### :reverse
 

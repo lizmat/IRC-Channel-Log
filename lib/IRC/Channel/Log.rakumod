@@ -4,7 +4,7 @@ use Array::Sorted::Util:ver<0.0.6>:auth<cpan:ELIZABETH>;
 use JSON::Fast:ver<0.15>;
 use String::Color:ver<0.0.7>:auth<cpan:ELIZABETH>;
 
-class IRC::Channel::Log:ver<0.0.22>:auth<cpan:ELIZABETH> {
+class IRC::Channel::Log:ver<0.0.23>:auth<cpan:ELIZABETH> {
     has IO() $.logdir    is required is built(:bind);
     has      $.class     is required is built(:bind);
     has      &.generator is required is built(:bind);
@@ -172,6 +172,18 @@ class IRC::Channel::Log:ver<0.0.22>:auth<cpan:ELIZABETH> {
 
 #-------------------------------------------------------------------------------
 # Entry filters
+
+    multi method entries(IRC::Channel::Log:D:
+      Str:D :around-target($target)!,
+            :$dates is raw,
+            :$nr-entries = 10,
+    ) {
+        (
+            self.entries(:before-target($target), :$dates, |%_).head($nr-entries).reverse.Slip,
+            self.log($target.substr(0,10)).this-target($target),
+            self.entries(:after-target($target), :$dates, |%_).head($nr-entries).Slip,
+        )
+    }
 
     multi method entries(IRC::Channel::Log:D:
       Str:D :after-target($target)!,
@@ -974,6 +986,12 @@ in YYYY-MM-DD format) of which there are entries available.
 
 .say for $channel.entries(:nicks<lizmat>);      # for one or more nicks
 
+.say for $channel.entries(:before-target($target);  # entries before target
+
+.say for $channel.entries(:after-target($target);   # entries after target
+
+.say for $channel.entries(:around-target($target);  # entries around target
+
 .say for $channel.entries(
   :dates<2021-04-23>,
   :nicks<lizmat japhb>,
@@ -1016,6 +1034,26 @@ if it would have been C<-0000>.
 The C<all> named argument can only be used in combination with the C<contains>
 and C<words> named arguments.  If specified with a true value, it will force
 entries to only be selected if B<all> conditions are true.
+
+=head3 :around-target
+
+=begin code :lang<raku>
+
+$channel.entries(:around-target<2021-04-23Z23:36>);  # default 10 entries
+
+$channel.entries(:around-target<2021-04-23Z23:36>, :nr-entries(5));
+
+=end code
+
+The C<around-target> named argument can be used with any of the other named
+arguments (with the exception of C<reverse>).  It will return any entries
+before and after to the entry with the C<target>.  By default, B<10> entries
+will be selected before B<and> after the target (thus returning a maximum
+of 21 entries).  The C<nr-entries> named argument can be used to indicate
+the number of entries before / after should be fetched.
+
+Targets are formatted as C<YYYY-MM-DDZHH:MM-NNNN> with the C<-NNNN> removed
+if it would have been C<-0000>.
 
 =head3 :before-target
 
@@ -1139,6 +1177,12 @@ $channel.entries(:nicks<lizmat japhb>);  # limit to "lizmat" or "japhb"
 
 The C<nicks> named argument allows one to specify one or more nicks
 to indicate which entries should be selected.
+
+=head3 :nr-entries
+
+The C<nr-entries> named argument can only be used in combination with
+the C<around-target> argument.  It specifies how many entries should
+be fetched before / after the given target.
 
 =head3 :reverse
 

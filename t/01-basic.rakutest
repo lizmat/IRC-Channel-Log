@@ -2,7 +2,7 @@ use Test;
 use IRC::Log::Colabti;
 use IRC::Channel::Log;
 
-plan 87;
+plan 93;
 
 my $logdir := $?FILE.IO.sibling('raku');
 my $state  := $?FILE.IO.sibling('state');
@@ -19,7 +19,7 @@ is $channel.problems.elems, 0,
 isa-ok $channel, IRC::Channel::Log;
 
 #.say for $channel.entries(
-#  :after-target<2021-04-23Z23:36>, :words<the>
+#  :around-target<2021-04-23Z09:33>, :conversation, :5nr-entries,
 #);
 #=finish
 
@@ -91,6 +91,14 @@ for False, True -> $reverse {
     is $channel.entries(:words<they always>, :all, :$reverse).elems, 1,
       'correct number of entries with the word "they" and "always"';
 
+    is $channel.entries(
+      :around-target<2021-04-23Z09:33>, :$reverse
+    ).elems, 21,
+      'did we get all 21 entries around the target?';
+    is $channel.entries(
+      :around-target<2021-04-23Z09:33>, :nr-entries(5), :$reverse
+    ).elems, 11,
+      'did we get all 11 entries around the target?';
 
     is $channel.entries(
       :matches(/ [^ | \s+] \d\d+ [\s+ | $] /), :$reverse
@@ -209,6 +217,16 @@ first-last
   "[02:46] (well, nqp and rakudo probably _could_ be built in parallel, but the makefile isn't set up in such a way that make knows how to do that)",
   "[09:27] My has has : these kind of keys : '33:A/B' , '9:Y/Q' '117:C/G' and i need to sort by the first number befor the ':'.",
   :no-reverse, :before-target<2021-04-24Z02:50>, :words<the>;
+
+first-last
+  '[09:31] m: sub (@arr) { @arr.push(5).say }([1, 2, 3])',
+  '[09:35] I\'d expect this kind of form : for %hash.sort(<condition>) -> $k { ...} ',
+  :no-reverse, :around-target<2021-04-23Z09:33>, :conversation;
+
+first-last
+  "[09:31] ah cool",
+  "[09:34] rakudo-moar ea102883d: OUTPUT: «[1 2 3 5]␤»",
+  :no-reverse, :around-target<2021-04-23Z09:33>, :conversation, :5nr-entries;
 
 first-last
   '[13:52] 404 for the win!',

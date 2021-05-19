@@ -2,6 +2,9 @@ Revision history for IRC-Channel-Log
 
 {{$NEXT}}
 
+0.0.23  2021-05-19T11:14:30+02:00
+    - Add support for :around-target to .entries
+
 0.0.22  2021-05-17T14:35:02+02:00
     - Fix issue with :before-target/:after-target if beyond first date
 
