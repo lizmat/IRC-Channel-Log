@@ -4,7 +4,7 @@ use Array::Sorted::Util:ver<0.0.6>:auth<cpan:ELIZABETH>;
 use JSON::Fast:ver<0.15>;
 use String::Color:ver<0.0.7>:auth<cpan:ELIZABETH>;
 
-class IRC::Channel::Log:ver<0.0.24>:auth<cpan:ELIZABETH> {
+class IRC::Channel::Log:ver<0.0.25>:auth<cpan:ELIZABETH> {
     has IO() $.logdir    is required is built(:bind);
     has      $.class     is required is built(:bind);
     has      &.generator is required is built(:bind);
@@ -705,10 +705,11 @@ class IRC::Channel::Log:ver<0.0.24>:auth<cpan:ELIZABETH> {
                             my $log;
                             with finds(@!dates,$date) -> $pos {
                                 $log := @!logs[$pos];
-                                $log.update($path);
-                                (%!nicks{.key} := {}){$date} := .value
-                                  unless %!nicks{.key}
-                                  for $log.nicks;
+                                with $log.update($path) -> int $added {
+                                    (%!nicks{.key} := {}){$date} := .value
+                                      unless %!nicks{.key}
+                                      for $log.nicks;
+                                }
                             }
 
                             # A new date

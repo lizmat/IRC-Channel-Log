@@ -2,6 +2,10 @@ Revision history for IRC-Channel-Log
 
 {{$NEXT}}
 
+0.0.25  2021-05-24T12:27:32+02:00
+    - Handle new .update interface in .watch-and-update
+    - Up test-dependency of IRC::Log::Colabti
+
 0.0.24  2021-05-19T11:24:48+02:00
     - Up test dependency on IRC::Log::Colabti, it was forgotten.
 
