@@ -141,8 +141,8 @@ sub first-last($first, $last = $first, :$no-reverse, |c) {
 
 my $first-control := '[00:04] *** Geth left';
 my $last-control  := "[23:46] *** aborazmeh left";
-my $first-text := '[06:31] Xliff: is your network faster than your disk?';
-my $last-text  := "[23:44] heh, even that isn't right. leg is also lexographic; cmp (not string-specific) is by codepoint, and coll is something I don't fully understand yet";
+my $first-text := '[06:31] <El_Che> Xliff: is your network faster than your disk?';
+my $last-text  := "[23:44] <raydiak> heh, even that isn't right. leg is also lexographic; cmp (not string-specific) is by codepoint, and coll is something I don't fully understand yet";
 
 first-last $first-control, $last-control;
 first-last $first-control, $last-control, :control;
@@ -151,99 +151,99 @@ first-last $first-text,    $last-text,    :conversation;
 first-last $first-control, $last-control, :!conversation;
 
 first-last
-  '[08:39] :q',
+  '[08:39] <lizmat> :q',
   '[22:31] * lizmat is glad that japhb is around to answer questions while she hits the sack',
   :nicks<lizmat>;
 first-last
   '[11:09] *** lizmat is now known as lismat',
   :nicks<lizmat>, :control;
 first-last
-  '[08:39] :q',
+  '[08:39] <lizmat> :q',
   '[22:31] * lizmat is glad that japhb is around to answer questions while she hits the sack',
   :nicks<lizmat>, :conversation;
 
 first-last
-  '[11:53] that would be *very* futuristic',
+  '[11:53] <lizmat> that would be *very* futuristic',
   '[22:31] * lizmat is glad that japhb is around to answer questions while she hits the sack',
   :nicks<lizmat>, :dates<2021-04-24>;
 
 first-last
-  '[08:39] :q',
-  '[13:57] the ending was hacked together really, it was never intended to end at 17 episodes',
+  '[08:39] <lizmat> :q',
+  '[13:57] <lizmat> the ending was hacked together really, it was never intended to end at 17 episodes',
   :nicks<lizmat>, :dates("2021-04-20".Date .. "2021-04-23".Date);
 
 first-last
-  '[08:39] :q',
-  '[23:44] ^^ Why does that even work?  Why does &?BLOCK go to the given and not to the when?',
+  '[08:39] <lizmat> :q',
+  '[23:44] <japhb> ^^ Why does that even work?  Why does &?BLOCK go to the given and not to the when?',
   :nicks<lizmat japhb>;
 
 first-last
-  '[09:30] m: sub (@arr) { @arr.push(5).say }((1, 2, 3))',
-  '[23:44] m: given 5 { when * % 2 { say "Odd"; &?BLOCK(6) }; when * %% 2 { say "Even" }}',
+  '[09:30] <brtastic> m: sub (@arr) { @arr.push(5).say }((1, 2, 3))',
+  '[23:44] <japhb> m: given 5 { when * % 2 { say "Odd"; &?BLOCK(6) }; when * %% 2 { say "Even" }}',
   :starts-with<m:>;
 
 first-last
-  '[09:25] How may i sort a hash by a part of his key?',
-  '[23:44] m: given 5 { when * % 2 { say "Odd"; &?BLOCK(6) }; when * %% 2 { say "Even" }}',
+  '[09:25] <PimDaniel> How may i sort a hash by a part of his key?',
+  '[23:44] <japhb> m: given 5 { when * % 2 { say "Odd"; &?BLOCK(6) }; when * %% 2 { say "Even" }}',
   :starts-with< m: how >, :ignorecase;
 
 first-last
-  "[13:13] IMHO the whole public namespace hierarchy doesn't work anyway. Different people would answer this question differently and there's no official guidance.",
+  "[13:13] <Juerd> IMHO the whole public namespace hierarchy doesn't work anyway. Different people would answer this question differently and there's no official guidance.",
   '[22:31] * lizmat is glad that japhb is around to answer questions while she hits the sack',
   :contains<answer>;
 
 first-last
-  '[09:30] how do I make this argument into Array?',
-  "[22:56] wonder if there'd be much difference using a different dataset, especially one more deeply nested, or more numbers instead of strings, etc. if you were wanting to use this for MUGS, I'd expect many games to use a lot more numbers",
+  '[09:30] <brtastic> how do I make this argument into Array?',
+  "[22:56] <raydiak> wonder if there'd be much difference using a different dataset, especially one more deeply nested, or more numbers instead of strings, etc. if you were wanting to use this for MUGS, I'd expect many games to use a lot more numbers",
   :contains<this answer>;
 
 first-last
-  "[13:13] IMHO the whole public namespace hierarchy doesn't work anyway. Different people would answer this question differently and there's no official guidance.",
+  "[13:13] <Juerd> IMHO the whole public namespace hierarchy doesn't work anyway. Different people would answer this question differently and there's no official guidance.",
   :contains<this answer>, :all;
 
 first-last
-  '[09:30] From the lower to the bigger. They just can be many with the same number.',
-  "[23:16] Nope, haven't done that yet.  I wish we had a good per-line profiler, like NYTProf is for perl5, because the routines here are HUGE with big branching structures, so per-call statistics are too rough.  :-/",
+  '[09:30] <PimDaniel> From the lower to the bigger. They just can be many with the same number.',
+  "[23:16] <japhb> Nope, haven't done that yet.  I wish we had a good per-line profiler, like NYTProf is for perl5, because the routines here are HUGE with big branching structures, so per-call statistics are too rough.  :-/",
   :words<with>;
 
 first-last
-  '[09:28] do they need to sort as number or as string ?  I assume as number ?',
-  '[22:32] raydiak: When you upload packages to zef or cpan, you are uploading a snapshot tarball of a particular version.  So they can keep all the versions they want.',
+  '[09:28] <lizmat> do they need to sort as number or as string ?  I assume as number ?',
+  '[22:32] <japhb> raydiak: When you upload packages to zef or cpan, you are uploading a snapshot tarball of a particular version.  So they can keep all the versions they want.',
   :words<always they>;
 
 first-last
-  '[09:29] and are they always Int?',
+  '[09:29] <lizmat> and are they always Int?',
   :words<always they>, :all;
 
 first-last
-  "[23:38] demostanis[m]: if it's any help (it probably isn't) it takes 2 minutes and 12 seconds to compile the rakudo distribution from Gentoo, this is with 56 threads on a 64 thread host.",
-  "[23:44] ^^ Why does that even work?  Why does &?BLOCK go to the given and not to the when?",
+  "[23:38] <summerisle> demostanis[m]: if it's any help (it probably isn't) it takes 2 minutes and 12 seconds to compile the rakudo distribution from Gentoo, this is with 56 threads on a 64 thread host.",
+  "[23:44] <japhb> ^^ Why does that even work?  Why does &?BLOCK go to the given and not to the when?",
   :no-reverse, :after-target<2021-04-23Z23:36>, :words<the>;
 
 first-last
-  "[02:46] (well, nqp and rakudo probably _could_ be built in parallel, but the makefile isn't set up in such a way that make knows how to do that)",
-  "[09:27] My has has : these kind of keys : '33:A/B' , '9:Y/Q' '117:C/G' and i need to sort by the first number befor the ':'.",
+  "[02:46] <moon-child> (well, nqp and rakudo probably _could_ be built in parallel, but the makefile isn't set up in such a way that make knows how to do that)",
+  "[09:27] <PimDaniel> My has has : these kind of keys : '33:A/B' , '9:Y/Q' '117:C/G' and i need to sort by the first number befor the ':'.",
   :no-reverse, :before-target<2021-04-24Z02:50>, :words<the>;
 
 first-last
-  '[09:31] m: sub (@arr) { @arr.push(5).say }([1, 2, 3])',
-  '[09:35] I\'d expect this kind of form : for %hash.sort(<condition>) -> $k { ...} ',
+  '[09:31] <lizmat> m: sub (@arr) { @arr.push(5).say }([1, 2, 3])',
+  '[09:35] <PimDaniel> I\'d expect this kind of form : for %hash.sort(<condition>) -> $k { ...} ',
   :no-reverse, :around-target<2021-04-23Z09:33>, :conversation;
 
 first-last
-  "[09:33] This is to display hash and i must display the whole key.",
-  "[08:48] so like dist do, I would package modules separately",
+  "[09:33] <PimDaniel> This is to display hash and i must display the whole key.",
+  "[08:48] <El_Che> so like dist do, I would package modules separately",
   :targets<2021-04-23Z09:33 2021-04-23Z14:04-0007 2021-04-24Z08:48-0001>
   :no-reverse;
 
 first-last
-  "[09:31] ah cool",
-  "[09:34] rakudo-moar ea102883d: OUTPUT: «[1 2 3 5]␤»",
+  "[09:31] <brtastic> ah cool",
+  "[09:34] <camelia> rakudo-moar ea102883d: OUTPUT: «[1 2 3 5]␤»",
   :no-reverse, :around-target<2021-04-23Z09:33>, :conversation, :5nr-entries;
 
 first-last
-  '[13:52] 404 for the win!',
-  '[21:16] m: my Blob[Any] $foo = "foo", 21',
+  '[13:52] <lizmat> 404 for the win!',
+  '[21:16] <lizmat> m: my Blob[Any] $foo = "foo", 21',
   :matches(/ [^ | \s+] \d\d+ [\s+ | $] /);
 
 #-------------------------------------------------------------------------------# Utility methods tests

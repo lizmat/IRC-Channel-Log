@@ -2,6 +2,9 @@ Revision history for IRC-Channel-Log
 
 {{$NEXT}}
 
+0.0.28  2021-05-25T17:58:56+02:00
+    - Up dependency on IRC::Colabti::Log to get Message.gist fix
+
 0.0.27  2021-05-25T15:51:20+02:00
     - Add :targets feature to .entries method
 
