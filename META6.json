@@ -23,7 +23,7 @@
   "tags": [
   ],
   "test-depends": [
-    "IRC::Log::Colabti:ver<0.0.29>:auth<cpan:ELIZABETH>"
+    "IRC::Log::Colabti:ver<0.0.30>:auth<cpan:ELIZABETH>"
   ],
-  "version": "0.0.28"
+  "version": "0.0.29"
 }

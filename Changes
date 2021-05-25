@@ -2,6 +2,9 @@ Revision history for IRC-Channel-Log
 
 {{$NEXT}}
 
+0.0.29  2021-05-25T22:58:56+02:00
+    - Up dependency on IRC::Colabti::Log for updated .update return value
+
 0.0.28  2021-05-25T17:58:56+02:00
     - Up dependency on IRC::Colabti::Log to get Message.gist fix
 
