@@ -172,6 +172,8 @@ entries
 
 .say for $channel.entries(:around-target($target);  # entries around target
 
+.say for $channel.entries(:@targets);           # entries of given targets
+
 .say for $channel.entries(
   :dates<2021-04-23>,
   :nicks<lizmat japhb>,
@@ -331,6 +333,14 @@ The `start-with` named argument allows specification of one or more strings that
 If comparisons need to be done in an case-insensitive manner, then the `ignorecase` named argument can be specified with a true value.
 
 Since this only applies to conversational entries, any additional setting of the `conversation` or `control` named arguments are ignored.
+
+### :targets
+
+```raku
+.say for $channel.entries(:@targets);
+```
+
+The `targets` named argument allows specification of one or more targets for which to return the associated entry.
 
 ### :words
 

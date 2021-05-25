@@ -4,7 +4,7 @@ use Array::Sorted::Util:ver<0.0.6>:auth<cpan:ELIZABETH>;
 use JSON::Fast:ver<0.15>;
 use String::Color:ver<0.0.7>:auth<cpan:ELIZABETH>;
 
-class IRC::Channel::Log:ver<0.0.26>:auth<cpan:ELIZABETH> {
+class IRC::Channel::Log:ver<0.0.27>:auth<cpan:ELIZABETH> {
     has IO() $.logdir    is required is built(:bind);
     has      $.class     is required is built(:bind);
     has      &.generator is required is built(:bind);
@@ -172,6 +172,12 @@ class IRC::Channel::Log:ver<0.0.26>:auth<cpan:ELIZABETH> {
 
 #-------------------------------------------------------------------------------
 # Entry filters
+
+    multi method entries(IRC::Channel::Log:D: :$targets!) {
+        $targets.map: -> $target {
+            $_ with self.log($target.substr(0,10)).this-target($target)
+        }
+    }
 
     multi method entries(IRC::Channel::Log:D:
       Str:D :around-target($target)!,
@@ -1007,6 +1013,8 @@ in YYYY-MM-DD format) of which there are entries available.
 
 .say for $channel.entries(:around-target($target);  # entries around target
 
+.say for $channel.entries(:@targets);           # entries of given targets
+
 .say for $channel.entries(
   :dates<2021-04-23>,
   :nicks<lizmat japhb>,
@@ -1236,6 +1244,17 @@ the C<ignorecase> named argument can be specified with a true value.
 Since this only applies to conversational entries, any additional
 setting of the C<conversation> or C<control> named arguments are
 ignored.
+
+=head3 :targets
+
+=begin code :lang<raku>
+
+.say for $channel.entries(:@targets);
+
+=end code
+
+The C<targets> named argument allows specification of one or more targets
+for which to return the associated entry.
 
 =head3 :words
 
