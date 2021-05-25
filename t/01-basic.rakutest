@@ -2,7 +2,7 @@ use Test;
 use IRC::Log::Colabti;
 use IRC::Channel::Log;
 
-plan 93;
+plan 94;
 
 my $logdir := $?FILE.IO.sibling('raku');
 my $state  := $?FILE.IO.sibling('state');
@@ -239,6 +239,7 @@ is-deeply
   $channel.aliases-for-nick("simcop2387"),
   (my str @ = <simcop2387 simcop2387_>),
   'Did we get all the aliases for the nick';
+is $channel.cleaned-nick("simcop2387"), "simcop", 'did we get a cleaned nick';
 
 is $channel.this-date('2021-04-23'), '2021-04-23', 'did we get this date';
 is $channel.this-date('2021-04-22'), '2021-04-23', 'did we get next date';

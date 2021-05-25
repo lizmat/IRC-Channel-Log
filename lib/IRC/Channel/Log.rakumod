@@ -4,7 +4,7 @@ use Array::Sorted::Util:ver<0.0.6>:auth<cpan:ELIZABETH>;
 use JSON::Fast:ver<0.15>;
 use String::Color:ver<0.0.7>:auth<cpan:ELIZABETH>;
 
-class IRC::Channel::Log:ver<0.0.25>:auth<cpan:ELIZABETH> {
+class IRC::Channel::Log:ver<0.0.26>:auth<cpan:ELIZABETH> {
     has IO() $.logdir    is required is built(:bind);
     has      $.class     is required is built(:bind);
     has      &.generator is required is built(:bind);
@@ -673,6 +673,9 @@ class IRC::Channel::Log:ver<0.0.25>:auth<cpan:ELIZABETH> {
     method aliases-for-nick(IRC::Channel::Log:D: Str:D $nick) {
         $!sc.aliases($nick)
     }
+    method cleaned-nick(IRC::Channel::Log:D: Str:D $nick) {
+        $!sc.cleaner()($nick)
+    }
 
     method years(IRC::Channel::Log:D:) {
         @!years ||= $!logdir.dir(:test(/ ^ \d ** 4 $ /)).map(*.basename).sort
@@ -949,6 +952,17 @@ my @aliases = $channel.aliases-for-nick($nick);
 
 The C<aliases-for-nick> instance method returns a sorted list of nicks that
 are assumed to be aliases (aka, have the same color) for the given nick.
+
+=head2 cleaned-nick
+
+=begin code :lang<raku>
+
+my $cleaned = $channel.cleaned-nick($nick);
+
+=end code
+
+The C<cleaned-nick> instance method returns the cleaned version of the
+given nick, which is used to group together the aliases of a nick.
 
 =head2 dates
 

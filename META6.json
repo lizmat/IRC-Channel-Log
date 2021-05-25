@@ -25,5 +25,5 @@
   "test-depends": [
     "IRC::Log::Colabti:ver<0.0.28>:auth<cpan:ELIZABETH>"
   ],
-  "version": "0.0.25"
+  "version": "0.0.26"
 }

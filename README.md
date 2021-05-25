@@ -122,6 +122,15 @@ my @aliases = $channel.aliases-for-nick($nick);
 
 The `aliases-for-nick` instance method returns a sorted list of nicks that are assumed to be aliases (aka, have the same color) for the given nick.
 
+cleaned-nick
+------------
+
+```raku
+my $cleaned = $channel.cleaned-nick($nick);
+```
+
+The `cleaned-nick` instance method returns the cleaned version of the given nick, which is used to group together the aliases of a nick.
+
 dates
 -----
 
