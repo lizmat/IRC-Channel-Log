@@ -1,10 +1,10 @@
 use v6.*;
 
 use Array::Sorted::Util:ver<0.0.6>:auth<cpan:ELIZABETH>;
-use JSON::Fast:ver<0.15>;
+use JSON::Fast:ver<0.16>;
 use String::Color:ver<0.0.7>:auth<cpan:ELIZABETH>;
 
-class IRC::Channel::Log:ver<0.0.29>:auth<cpan:ELIZABETH> {
+class IRC::Channel::Log:ver<0.0.30>:auth<cpan:ELIZABETH> {
     has IO() $.logdir    is required is built(:bind);
     has      $.class     is required is built(:bind);
     has      &.generator is required is built(:bind);
@@ -92,7 +92,7 @@ class IRC::Channel::Log:ver<0.0.29>:auth<cpan:ELIZABETH> {
         inserts @dates, .Str for @to-add;
     }
 
-    # Return the dates that contain a given string in any case
+    # Return the dates that contain given strings in any case
     multi method dates-with(IRC::Channel::Log:D:
        @needle is copy,
       :$dates  is raw,
@@ -116,13 +116,14 @@ class IRC::Channel::Log:ver<0.0.29>:auth<cpan:ELIZABETH> {
         }
     }
 
-    # Return the dates that contain given strings in any case
+    # Return the dates that contain a given string in any case
     multi method dates-with(IRC::Channel::Log:D:
       Str:D $needle,
            :$dates is raw,
            :$reverse
     ) {
-        my $found := $!dates-with-lock.protect: { %!dates-with{$needle} }
+        my str $key = $needle.fc;
+        my $found  := $!dates-with-lock.protect: { %!dates-with{$key} }
 
         # Alas, we need to do *all* the work for later caching
         without $found {
@@ -133,7 +134,7 @@ class IRC::Channel::Log:ver<0.0.29>:auth<cpan:ELIZABETH> {
 
             # Save the work
             $found := $!dates-with-lock.protect: {
-                %!dates-with{$needle} := @found;
+                %!dates-with{$key} := @found;
             }
         }
 
@@ -149,8 +150,8 @@ class IRC::Channel::Log:ver<0.0.29>:auth<cpan:ELIZABETH> {
              :$dates is raw,
              :$reverse
     ) {
-        my $name  := $regex.gist;
-        my $found := $!dates-with-lock.protect: { %!dates-with{$name} }
+        my $key   := $regex.gist;
+        my $found := $!dates-with-lock.protect: { %!dates-with{$key} }
 
         # Alas, we need to do *all* the work for later caching
         without $found {
@@ -160,7 +161,7 @@ class IRC::Channel::Log:ver<0.0.29>:auth<cpan:ELIZABETH> {
 
             # Save the work
             $found := $!dates-with-lock.protect: {
-                %!dates-with{$name} := @found;
+                %!dates-with{$key} := @found;
             }
         }
 
@@ -687,6 +688,15 @@ class IRC::Channel::Log:ver<0.0.29>:auth<cpan:ELIZABETH> {
         @!years ||= $!logdir.dir(:test(/ ^ \d ** 4 $ /)).map(*.basename).sort
     }
 
+    # Make sure if a nick was searched before, that the given date
+    # is known to have that string
+    method !add-date-of-nick(Str:D $nick, str $date) {
+        my $needle = $nick.fc;
+        with $!dates-with-lock.protect({ %!dates-with{$needle} }) -> @dates {
+            $!dates-with-lock.protect: { inserts @dates, $date }
+        }
+    }
+
     method watch-and-update(IRC::Channel::Log:D: --> Promise:D) {
         start {
             my $year := self.years.tail;
@@ -719,9 +729,11 @@ class IRC::Channel::Log:ver<0.0.29>:auth<cpan:ELIZABETH> {
 
                                 for $log.update($path) -> \entry {
                                     my $nick := entry.nick;
-                                    (%!nicks{$nick} := {}){$date} :=
-                                      %log-nicks{$nick}
-                                      unless %!nicks{$nick};
+                                    unless %!nicks{$nick} {
+                                        (%!nicks{$nick} := {}){$date} :=
+                                          %log-nicks{$nick};
+                                        self!add-date-of-nick($nick, $date);
+                                    }
                                 }
                             }
 
@@ -729,7 +741,10 @@ class IRC::Channel::Log:ver<0.0.29>:auth<cpan:ELIZABETH> {
                             else {
                                 $log := $!class.new($path, $date);
                                 inserts(@!dates, $date, @!logs, $log);
-                                %!nicks{.key}{$date} := .value for $log.nicks;
+                                for $log.nicks -> (:key($nick), :value($ent)) {
+                                    %!nicks{$nick}{$date} := $ent;
+                                    self!add-date-of-nick($nick, $date);
+                                }
                             }
 
                             # Create mappings for any new nicks
@@ -812,7 +827,9 @@ class IRC::Channel::Log:ver<0.0.29>:auth<cpan:ELIZABETH> {
 
     # Perform all of the necessary shutdown work
     method shutdown(IRC::Channel::Log:D: --> Nil) {
-        self!colors-json.spurt: to-json $!sc.Map, :!pretty;
+        my $io := self!colors-json;
+        $io.parent.mkdir unless $io.e;
+        $io.spurt: to-json $!sc.Map, :!pretty;
     }
 }
 

@@ -7,7 +7,7 @@
   ],
   "depends": [
     "Array::Sorted::Util:ver<0.0.6>:auth<cpan:ELIZABETH>",
-    "JSON::Fast:ver<0.15>",
+    "JSON::Fast:ver<0.16>",
     "String::Color:ver<0.0.7>:auth<cpan:ELIZABETH>"
   ],
   "description": "access to all logs of an IRC channel",
@@ -25,5 +25,5 @@
   "test-depends": [
     "IRC::Log::Colabti:ver<0.0.30>:auth<cpan:ELIZABETH>"
   ],
-  "version": "0.0.29"
+  "version": "0.0.30"
 }
