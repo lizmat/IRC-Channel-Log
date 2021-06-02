@@ -478,9 +478,15 @@ watch-and-update
 
 ```raku
 $channel.watch-and-update;
+
+$channel.watch-and-update post-process => {
+    say "$channel.name(): $_.message()"
+}
 ```
 
 The `watch-and-update` instance method starts a thread (and returns its `Promise` in which it watches for any updates in the most recent logs. If there are any updates, it will process them and make sure that all the internal state is correctly updated.
+
+It optionally takes a `post-process` named argument with a `Callable` that will be called with any `IRC::Log` entries that have been added to the channel log.
 
 AUTHOR
 ======

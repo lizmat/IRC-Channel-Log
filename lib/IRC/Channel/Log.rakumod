@@ -4,7 +4,7 @@ use Array::Sorted::Util:ver<0.0.6>:auth<cpan:ELIZABETH>;
 use JSON::Fast:ver<0.16>;
 use String::Color:ver<0.0.7>:auth<cpan:ELIZABETH>;
 
-class IRC::Channel::Log:ver<0.0.30>:auth<cpan:ELIZABETH> {
+class IRC::Channel::Log:ver<0.0.31>:auth<cpan:ELIZABETH> {
     has IO() $.logdir    is required is built(:bind);
     has      $.class     is required is built(:bind);
     has      &.generator is required is built(:bind);
@@ -697,7 +697,7 @@ class IRC::Channel::Log:ver<0.0.30>:auth<cpan:ELIZABETH> {
         }
     }
 
-    method watch-and-update(IRC::Channel::Log:D: --> Promise:D) {
+    method watch-and-update(IRC::Channel::Log:D: :&post-process --> Promise:D) {
         start {
             my $year := self.years.tail;
 
@@ -734,6 +734,7 @@ class IRC::Channel::Log:ver<0.0.30>:auth<cpan:ELIZABETH> {
                                           %log-nicks{$nick};
                                         self!add-date-of-nick($nick, $date);
                                     }
+                                    post-process(entry) if &post-process;
                                 }
                             }
 
@@ -744,6 +745,9 @@ class IRC::Channel::Log:ver<0.0.30>:auth<cpan:ELIZABETH> {
                                 for $log.nicks -> (:key($nick), :value($ent)) {
                                     %!nicks{$nick}{$date} := $ent;
                                     self!add-date-of-nick($nick, $date);
+                                }
+                                if &post-process {
+                                    post-process($_) for $log.entries;
                                 }
                             }
 
@@ -1455,12 +1459,20 @@ which would effectively mean that there are B<no> dates in the log.
 
 $channel.watch-and-update;
 
+$channel.watch-and-update post-process => {
+    say "$channel.name(): $_.message()"
+}
+
 =end code
 
 The C<watch-and-update> instance method starts a thread (and returns its
 C<Promise> in which it watches for any updates in the most recent logs.
 If there are any updates, it will process them and make sure that all the
 internal state is correctly updated.
+
+It optionally takes a C<post-process> named argument with a C<Callable> that
+will be called with any C<IRC::Log> entries that have been added to the channel
+log.
 
 =head1 AUTHOR
 
