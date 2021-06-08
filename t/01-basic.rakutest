@@ -2,7 +2,7 @@ use Test;
 use IRC::Log::Colabti;
 use IRC::Channel::Log;
 
-plan 97;
+plan 99;
 
 my $logdir := $?FILE.IO.sibling('raku');
 my $state  := $?FILE.IO.sibling('state');
@@ -18,11 +18,7 @@ is $channel.problems.elems, 0,
   'there should be no problems';
 isa-ok $channel, IRC::Channel::Log;
 
-#.say for $channel.entries(:targets<
-#  2021-04-23Z09:33
-#  2021-04-23Z14:04-0007
-#  2021-04-24Z08:48-0001
-#>);
+#.say for $channel.entries(:after-target<2021-04-23Z23:38>, :words<the>).head: 3;
 #=finish
 
 my str @dates = $channel.dates;
@@ -115,8 +111,10 @@ for False, True -> $reverse {
 
 is $channel.entries(:before-target<2021-04-24Z02:50>, :words<the>).elems, 60,
   'did we get all entries before the target?';
-is $channel.entries(:after-target<2021-04-23Z23:36>, :words<the>).elems, 79,
-  'did we get all entries before the target?';
+is $channel.entries(:from-target<2021-04-23Z23:38>, :words<the>).elems, 79,
+  'did we get all entries from the target?';
+is $channel.entries(:after-target<2021-04-23Z23:38>, :words<the>).elems, 78,
+  'did we get all entries after the target?';
 
 #-------------------------------------------------------------------------------
 # Same tests, but now checking on first / last entry
@@ -218,7 +216,12 @@ first-last
 first-last
   "[23:38] <summerisle> demostanis[m]: if it's any help (it probably isn't) it takes 2 minutes and 12 seconds to compile the rakudo distribution from Gentoo, this is with 56 threads on a 64 thread host.",
   "[23:44] <japhb> ^^ Why does that even work?  Why does &?BLOCK go to the given and not to the when?",
-  :no-reverse, :after-target<2021-04-23Z23:36>, :words<the>;
+  :no-reverse, :from-target<2021-04-23Z23:38>, :words<the>;
+
+first-last
+  "[02:27] <raydiak> demostanis[m]: I know it's several hours after the fact, but maybe you'll see this in the scrollback. 12m34s on a ryzen 5 2500u laptop (4 smt2 cores @ 2ghz/3.6ghz turbo) running manjaro...but I forgot to pass -j so that's single-threaded :P",
+  "[23:44] <japhb> ^^ Why does that even work?  Why does &?BLOCK go to the given and not to the when?",
+  :no-reverse, :after-target<2021-04-23Z23:38>, :words<the>;
 
 first-last
   "[02:46] <moon-child> (well, nqp and rakudo probably _could_ be built in parallel, but the makefile isn't set up in such a way that make knows how to do that)",

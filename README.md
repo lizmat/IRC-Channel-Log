@@ -168,6 +168,8 @@ entries
 
 .say for $channel.entries(:before-target($target);  # entries before target
 
+.say for $channel.entries(:from-target($target);    # entries from target
+
 .say for $channel.entries(:after-target($target);   # entries after target
 
 .say for $channel.entries(:around-target($target);  # entries around target
@@ -277,6 +279,16 @@ $channel.entries(:@dates);              # multiple dates
 ```
 
 The `dates` named argument allows one to specify the date(s) from which entries should be selected. Dates can be specified in anything that will stringify in the YYYY-MM-DD format, but are expected to be in ascending sort order.
+
+### :from-target
+
+```raku
+$channel.entries(:from-target<2021-04-23Z23:36>);
+```
+
+The `from-target` named argument can be used with any of the other named arguments (with the exception of `reverse`, which it overrides as `:!reverse`). It will limit any entries to those that have a `target` value **greater than or equal to** the value provided.
+
+Targets are formatted as `YYYY-MM-DDZHH:MM-NNNN` with the `-NNNN` removed if it would have been `-0000`.
 
 ### :ignorecase
 

@@ -4,7 +4,7 @@ use Array::Sorted::Util:ver<0.0.6>:auth<cpan:ELIZABETH>;
 use JSON::Fast:ver<0.16>;
 use String::Color:ver<0.0.7>:auth<cpan:ELIZABETH>;
 
-class IRC::Channel::Log:ver<0.0.31>:auth<cpan:ELIZABETH> {
+class IRC::Channel::Log:ver<0.0.32>:auth<cpan:ELIZABETH> {
     has IO() $.logdir    is required is built(:bind);
     has      $.class     is required is built(:bind);
     has      &.generator is required is built(:bind);
@@ -193,9 +193,26 @@ class IRC::Channel::Log:ver<0.0.31>:auth<cpan:ELIZABETH> {
     }
 
     multi method entries(IRC::Channel::Log:D:
+      Str:D :from-target($target)!,
+            :$dates is raw,
+            :reverse($),  # ignored, implied by "from-target"
+    ) {
+        my str $target-date = $target.substr(0,10);
+        my str @dates = $dates ?? $dates.List !! @!dates;
+        my $pos := finds @dates, $target-date;
+        @dates.splice: 0, $pos + $pos.defined;
+
+        (
+          self.entries(:dates($target-date), |%_)
+            .grep(*.target ge $target).Slip,
+          self.entries(:@dates, |%_).Slip
+        )
+    }
+
+    multi method entries(IRC::Channel::Log:D:
       Str:D :after-target($target)!,
             :$dates is raw,
-            :reverse($),  # ignored, implied by "before-target"
+            :reverse($),  # ignored, implied by "after-target"
     ) {
         my str $target-date = $target.substr(0,10);
         my str @dates = $dates ?? $dates.List !! @!dates;
@@ -1034,6 +1051,8 @@ in YYYY-MM-DD format) of which there are entries available.
 
 .say for $channel.entries(:before-target($target);  # entries before target
 
+.say for $channel.entries(:from-target($target);    # entries from target
+
 .say for $channel.entries(:after-target($target);   # entries after target
 
 .say for $channel.entries(:around-target($target);  # entries around target
@@ -1191,6 +1210,22 @@ The C<dates> named argument allows one to specify the date(s) from
 which entries should be selected.  Dates can be specified in anything
 that will stringify in the YYYY-MM-DD format, but are expected to be in
 ascending sort order.
+
+=head3 :from-target
+
+=begin code :lang<raku>
+
+$channel.entries(:from-target<2021-04-23Z23:36>);
+
+=end code
+
+The C<from-target> named argument can be used with any of the other named
+arguments (with the exception of C<reverse>, which it overrides as
+C<:!reverse>).  It will limit any entries to those that have a C<target>
+value B<greater than or equal to> the value provided.
+
+Targets are formatted as C<YYYY-MM-DDZHH:MM-NNNN> with the C<-NNNN> removed
+if it would have been C<-0000>.
 
 =head3 :ignorecase
 
