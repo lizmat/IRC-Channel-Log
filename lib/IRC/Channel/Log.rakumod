@@ -4,7 +4,7 @@ use Array::Sorted::Util:ver<0.0.6>:auth<cpan:ELIZABETH>;
 use JSON::Fast:ver<0.16>;
 use String::Color:ver<0.0.7>:auth<cpan:ELIZABETH>;
 
-class IRC::Channel::Log:ver<0.0.32>:auth<cpan:ELIZABETH> {
+class IRC::Channel::Log:ver<0.0.33>:auth<cpan:ELIZABETH> {
     has IO() $.logdir    is required is built(:bind);
     has      $.class     is required is built(:bind);
     has      &.generator is required is built(:bind);
@@ -192,21 +192,25 @@ class IRC::Channel::Log:ver<0.0.32>:auth<cpan:ELIZABETH> {
         )
     }
 
+    # Helper method for .entries(:after-target / :from-target)
+    method !target-g($target, \dates, &condition, %args) {
+        my str $target-date = $target.substr(0,10);
+        my str @dates = dates ?? dates.List !! @!dates;
+        my $pos := finds @dates, $target-date;
+        @dates.splice: 0, $pos + $pos.defined;
+
+        (
+          self.entries(:dates($target-date), |%args).grep(&condition).Slip,
+          self.entries(:@dates, |%args).Slip
+        )
+    }
+
     multi method entries(IRC::Channel::Log:D:
       Str:D :from-target($target)!,
             :$dates is raw,
             :reverse($),  # ignored, implied by "from-target"
     ) {
-        my str $target-date = $target.substr(0,10);
-        my str @dates = $dates ?? $dates.List !! @!dates;
-        my $pos := finds @dates, $target-date;
-        @dates.splice: 0, $pos + $pos.defined;
-
-        (
-          self.entries(:dates($target-date), |%_)
-            .grep(*.target ge $target).Slip,
-          self.entries(:@dates, |%_).Slip
-        )
+        self!target-g($target, $dates, *.target ge $target, %_)
     }
 
     multi method entries(IRC::Channel::Log:D:
@@ -214,15 +218,19 @@ class IRC::Channel::Log:ver<0.0.32>:auth<cpan:ELIZABETH> {
             :$dates is raw,
             :reverse($),  # ignored, implied by "after-target"
     ) {
+        self!target-g($target, $dates, *.target gt $target, %_)
+    }
+
+    # Helper method for .entries(:before-target / :until-target)
+    method !target-l($target, \dates, &condition, %args) {
         my str $target-date = $target.substr(0,10);
-        my str @dates = $dates ?? $dates.List !! @!dates;
-        my $pos := finds @dates, $target-date;
-        @dates.splice: 0, $pos + $pos.defined;
+        my str @dates = dates ?? dates.List !! @!dates;
+        @dates.splice: finds @dates, $target-date;
 
         (
-          self.entries(:dates($target-date), |%_)
-            .grep(*.target gt $target).Slip,
-          self.entries(:@dates, |%_).Slip
+          self.entries(:dates($target-date), |%args)
+            .grep(&condition).reverse.Slip,
+          self.entries(:@dates, :reverse, |%args).Slip
         )
     }
 
@@ -231,15 +239,15 @@ class IRC::Channel::Log:ver<0.0.32>:auth<cpan:ELIZABETH> {
             :$dates is raw,
             :reverse($),  # ignored, implied by "before-target"
     ) {
-        my str $target-date = $target.substr(0,10);
-        my str @dates = $dates ?? $dates.List !! @!dates;
-        @dates.splice: finds @dates, $target-date;
+        self!target-l($target, $dates, *.target lt $target, %_)
+    }
 
-        (
-          self.entries(:dates($target-date), |%_)
-            .grep(*.target lt $target).reverse.Slip,
-          self.entries(:@dates, :reverse, |%_).Slip
-        )
+    multi method entries(IRC::Channel::Log:D:
+      Str:D :until-target($target)!,
+            :$dates is raw,
+            :reverse($),  # ignored, implied by "until-target"
+    ) {
+        self!target-l($target, $dates, *.target le $target, %_)
     }
 
     # Filter the given entries on the given nick(s)

@@ -2,7 +2,7 @@ use Test;
 use IRC::Log::Colabti;
 use IRC::Channel::Log;
 
-plan 99;
+plan 101;
 
 my $logdir := $?FILE.IO.sibling('raku');
 my $state  := $?FILE.IO.sibling('state');
@@ -111,6 +111,8 @@ for False, True -> $reverse {
 
 is $channel.entries(:before-target<2021-04-24Z02:50>, :words<the>).elems, 60,
   'did we get all entries before the target?';
+is $channel.entries(:until-target<2021-04-24Z02:50>, :words<the>).elems, 61,
+  'did we get all entries until the target?';
 is $channel.entries(:from-target<2021-04-23Z23:38>, :words<the>).elems, 79,
   'did we get all entries from the target?';
 is $channel.entries(:after-target<2021-04-23Z23:38>, :words<the>).elems, 78,
@@ -217,6 +219,11 @@ first-last
   "[23:38] <summerisle> demostanis[m]: if it's any help (it probably isn't) it takes 2 minutes and 12 seconds to compile the rakudo distribution from Gentoo, this is with 56 threads on a 64 thread host.",
   "[23:44] <japhb> ^^ Why does that even work?  Why does &?BLOCK go to the given and not to the when?",
   :no-reverse, :from-target<2021-04-23Z23:38>, :words<the>;
+
+first-last
+  "[23:38] <summerisle> demostanis[m]: if it's any help (it probably isn't) it takes 2 minutes and 12 seconds to compile the rakudo distribution from Gentoo, this is with 56 threads on a 64 thread host.",
+  "[09:27] <PimDaniel> My has has : these kind of keys : '33:A/B' , '9:Y/Q' '117:C/G' and i need to sort by the first number befor the ':'.",
+  :no-reverse, :until-target<2021-04-23Z23:38>, :words<the>;
 
 first-last
   "[02:27] <raydiak> demostanis[m]: I know it's several hours after the fact, but maybe you'll see this in the scrollback. 12m34s on a ryzen 5 2500u laptop (4 smt2 cores @ 2ghz/3.6ghz turbo) running manjaro...but I forgot to pass -j so that's single-threaded :P",
