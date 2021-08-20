@@ -376,6 +376,15 @@ If comparisons need to be done in an case-insensitive manner, then the `ignoreca
 
 Since this only applies to conversational entries, any additional setting of the `conversation` or `control` named arguments are ignored.
 
+initial-topic
+-------------
+
+```raku
+say $channel.initial-topic($date);
+```
+
+The `initial-topic` instance method takes a date (either as a `Date` object or as a string) and returns the log entry of the topic (as a ::Topic object) of the channel on that date. Returns `Nil` if no topic is known for the given date.
+
 is-first-date-of-month
 ----------------------
 
@@ -383,7 +392,7 @@ is-first-date-of-month
 say $channel.is-first-date-of-month($date);
 ```
 
-The `is-first-date-of-month` instance method takes a date (either as a `Date` object or as astring) and returns whether that date is the first date of the month, according to availability in the logs.
+The `is-first-date-of-month` instance method takes a date (either as a `Date` object or as a string) and returns whether that date is the first date of the month, according to availability in the logs.
 
 is-first-date-of-year
 ---------------------

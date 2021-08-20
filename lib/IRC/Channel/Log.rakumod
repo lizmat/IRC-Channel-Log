@@ -4,7 +4,7 @@ use Array::Sorted::Util:ver<0.0.6>:auth<cpan:ELIZABETH>;
 use JSON::Fast:ver<0.16>;
 use String::Color:ver<0.0.7>:auth<cpan:ELIZABETH>;
 
-class IRC::Channel::Log:ver<0.0.33>:auth<cpan:ELIZABETH> {
+class IRC::Channel::Log:ver<0.0.34>:auth<cpan:ELIZABETH> {
     has IO() $.logdir    is required is built(:bind);
     has      $.class     is required is built(:bind);
     has      &.generator is required is built(:bind);
@@ -12,9 +12,10 @@ class IRC::Channel::Log:ver<0.0.33>:auth<cpan:ELIZABETH> {
     has str  $.name = $!logdir.basename;
     has str  @.dates       is built(False);
     has str  @.years       is built(False);
-    has      @.problems    is built(False);
+    has      %.problems    is built(False);
     has String::Color $!sc;
     has      @!logs;   # log objects, same order as @!dates
+    has      @!topics; # topic entry objects, same order as @!dates
     has      %!nicks;  # hash of hash of entries
              # |- nick
              #     |- date
@@ -41,9 +42,11 @@ class IRC::Channel::Log:ver<0.0.33>:auth<cpan:ELIZABETH> {
           .map(-> $path { $_ with $!class.new($path) })
         -> $log {
 
-            # Associate the date with the log
+            # Associate date with the log and other information
             my $date := $log.date.Str;
-            inserts @!dates, $date, @!logs, $log;
+            inserts @!dates,  $date,
+                    @!logs,   $log,
+                    @!topics, $log.last-topic-change;
 
             # Map nicks to dates with entries per date
             for $log.nicks {
@@ -57,7 +60,20 @@ class IRC::Channel::Log:ver<0.0.33>:auth<cpan:ELIZABETH> {
 
             # Remember any problems for this log
             if $log.problems -> @problems {
-                @!problems.push: $date => @problems;
+                %!problems{$date} := @problems;
+            }
+        }
+
+        # Topic of a date is the last changed topic of previous date
+        @!topics.pop;
+        @!topics.unshift(Nil);
+        my $last-topic := Nil;
+        for 1 ..^ +@!topics -> int $i {
+            if @!topics[$i] -> $topic {  # lose container
+                $last-topic := @!topics[$i] := $topic;
+            }
+            else {
+                @!topics[$i] := $last-topic;
             }
         }
 
@@ -820,6 +836,16 @@ class IRC::Channel::Log:ver<0.0.33>:auth<cpan:ELIZABETH> {
         }
     }
 
+    # Return the initial topic for the given date, if any
+    method initial-topic(IRC::Channel::Log:D: str $date) {
+        with finds(@!dates, $date) -> $pos {
+            @!topics[$pos] // Nil
+        }
+        else {
+            Nil
+        }
+    }
+
     # Return whether the given date is the first date of the month
     # judging by availability.
     method is-first-date-of-month(IRC::Channel::Log:D: str $date --> Bool:D) {
@@ -839,7 +865,7 @@ class IRC::Channel::Log:ver<0.0.33>:auth<cpan:ELIZABETH> {
 
     # Return whether the given date is the first date of the year
     # judging by availability.
-    method is-first-date-of-year(IRC::Channel::Log:D: $date --> Bool:D) {
+    method is-first-date-of-year(IRC::Channel::Log:D: str $date --> Bool:D) {
         if $date.ends-with('-01-01') {
             True
         }
@@ -1355,6 +1381,19 @@ Since this only applies to conversational entries, any additional
 setting of the C<conversation> or C<control> named arguments are
 ignored.
 
+=head2 initial-topic
+
+=begin code :lang<raku>
+
+say $channel.initial-topic($date);
+
+=end code
+
+The C<initial-topic> instance method takes a date (either as a
+C<Date> object or as a string) and returns the log entry of the
+topic (as a ::Topic object) of the channel on that date.  Returns
+C<Nil> if no topic is known for the given date.
+
 =head2 is-first-date-of-month
 
 =begin code :lang<raku>
@@ -1364,7 +1403,7 @@ say $channel.is-first-date-of-month($date);
 =end code
 
 The C<is-first-date-of-month> instance method takes a date (either as a
-C<Date> object or as astring) and returns whether that date is the
+C<Date> object or as a string) and returns whether that date is the
 first date of the month, according to availability in the logs.
 
 =head2 is-first-date-of-year

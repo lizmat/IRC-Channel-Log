@@ -704,5 +704,6 @@
 [23:38] <summerisle> demostanis[m]: if it's any help (it probably isn't) it takes 2 minutes and 12 seconds to compile the rakudo distribution from Gentoo, this is with 56 threads on a 64 thread host.
 
 [23:47] *** swaggboi left
+[23:48] *** lizmat changes topic to: Raku Rocks!
 [23:52] *** swaggboi joined
 [23:52] *** pecastro left

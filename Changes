@@ -2,6 +2,10 @@ Revision history for IRC-Channel-Log
 
 {{$NEXT}}
 
+0.0.34  2021-08-20T17:48:37+02:00
+    - Add support for .initial-topic(date)
+    - Up dependency on IRC::Log::Colabti for .last-topic-change
+
 0.0.33  2021-06-09T16:39:59+02:00
     - Add support for .entries(:until-target)
 
@@ -18,10 +22,10 @@ Revision history for IRC-Channel-Log
     - Up dependency on JSON::Fast
 
 0.0.29  2021-05-25T22:58:56+02:00
-    - Up dependency on IRC::Colabti::Log for updated .update return value
+    - Up dependency on IRC::Log::Colabti for updated .update return value
 
 0.0.28  2021-05-25T17:58:56+02:00
-    - Up dependency on IRC::Colabti::Log to get Message.gist fix
+    - Up dependency on IRC::Log::Colabti to get Message.gist fix
 
 0.0.27  2021-05-25T15:51:20+02:00
     - Add :targets feature to .entries method

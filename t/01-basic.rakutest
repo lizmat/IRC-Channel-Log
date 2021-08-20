@@ -2,7 +2,7 @@ use Test;
 use IRC::Log::Colabti;
 use IRC::Channel::Log;
 
-plan 101;
+plan 103;
 
 my $logdir := $?FILE.IO.sibling('raku');
 my $state  := $?FILE.IO.sibling('state');
@@ -26,8 +26,11 @@ is +@dates, 2, 'did we get 2 dates';
 is @dates.head, '2021-04-23', 'is the first date ok';
 is @dates.tail, '2021-04-24', 'is the last date ok';
 
-my @problems := $channel.problems;
-is +@problems, 0, 'did we get correct number of problems';
+nok $channel.initial-topic('2021-04-23'), 'no topic initially';
+is $channel.initial-topic('2021-04-24').text, 'Raku Rocks!', 'topic ok';
+
+my %problems := $channel.problems;
+is +%problems, 0, 'did we get correct number of problems';
 
 my @nicks = $channel.nicks;
 is +@nicks, 260, 'did we get correct number of nicks';
@@ -45,19 +48,19 @@ is +@dates, 0, 'did we get 0 dates';
 # Tests on number of elements selected
 
 for False, True -> $reverse {
-    is $channel.entries(:$reverse).elems, 1229,
+    is $channel.entries(:$reverse).elems, 1230,
       'did we get correct total entries';
-    is $channel.entries(:control, :$reverse).elems, 766,
+    is $channel.entries(:control, :$reverse).elems, 767,
       'did we get correct number of control messages';
-    is $channel.entries(:conversation, :$reverse).elems, 463,
+    is $channel.entries(:conversation, :$reverse).elems, 464,
       'did we get correct number of  messages';
 
-    is $channel.entries(:nicks<lizmat>, :$reverse).elems, 118,
+    is $channel.entries(:nicks<lizmat>, :$reverse).elems, 119,
       'did we get correct number of entries by lizmat';
 
-    is $channel.entries(:control, :nicks<lizmat>, :$reverse).elems, 1,
+    is $channel.entries(:control, :nicks<lizmat>, :$reverse).elems, 2,
       'did we get correct number of control messages by lizmat';
-    is $channel.entries(:conversation, :nicks<lizmat>, :$reverse).elems, 117,
+    is $channel.entries(:conversation, :nicks<lizmat>, :$reverse).elems, 118,
       'did we get correct number of conversation messages by lizmat';
 
     is $channel.entries(
@@ -66,8 +69,8 @@ for False, True -> $reverse {
       'did we get correct number of entries by lizmat on 2021-04-24';
     is $channel.entries(
       :dates("2021-04-20".Date .. "2021-04-23".Date), :nicks<lizmat>, :$reverse
-    ).elems, 69, 'correct number of entries by lizmat from Date range';
-    is $channel.entries(:nicks<lizmat japhb>, :$reverse).elems, 146,
+    ).elems, 70, 'correct number of entries by lizmat from Date range';
+    is $channel.entries(:nicks<lizmat japhb>, :$reverse).elems, 147,
       'correct number of entries by lizmat or japhb';
 
     is $channel.entries(:starts-with<m:>, :$reverse).elems, 17,
@@ -156,6 +159,7 @@ first-last
   :nicks<lizmat>;
 first-last
   '[11:09] *** lizmat is now known as lismat',
+  '[23:48] *** lizmat changes topic to: Raku Rocks!',
   :nicks<lizmat>, :control;
 first-last
   '[08:39] <lizmat> :q',
@@ -169,7 +173,7 @@ first-last
 
 first-last
   '[08:39] <lizmat> :q',
-  '[13:57] <lizmat> the ending was hacked together really, it was never intended to end at 17 episodes',
+  '[23:48] *** lizmat changes topic to: Raku Rocks!',
   :nicks<lizmat>, :dates("2021-04-20".Date .. "2021-04-23".Date);
 
 first-last
