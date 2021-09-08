@@ -512,7 +512,7 @@ It optionally takes a `post-process` named argument with a `Callable` that will 
 AUTHOR
 ======
 
-Elizabeth Mattijsen <liz@wenzperl.nl>
+Elizabeth Mattijsen <liz@raku.rocks>
 
 COPYRIGHT AND LICENSE
 =====================

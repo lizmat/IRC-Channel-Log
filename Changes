@@ -2,6 +2,10 @@ Revision history for IRC-Channel-Log
 
 {{$NEXT}}
 
+0.0.35  2021-09-08T11:28:51+02:00
+    - Migrate to zef ecosystem, update dependency
+    - Update email address
+
 0.0.34  2021-08-20T17:48:37+02:00
     - Add support for .initial-topic(date)
     - Up dependency on IRC::Log::Colabti for .last-topic-change

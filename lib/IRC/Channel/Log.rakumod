@@ -1,10 +1,10 @@
 use v6.*;
 
-use Array::Sorted::Util:ver<0.0.6>:auth<cpan:ELIZABETH>;
+use Array::Sorted::Util:ver<0.0.7>:auth<zef:lizmat>;
 use JSON::Fast:ver<0.16>;
-use String::Color:ver<0.0.7>:auth<cpan:ELIZABETH>;
+use String::Color:ver<0.0.8>:auth<zef:lizmat>;
 
-class IRC::Channel::Log:ver<0.0.34>:auth<cpan:ELIZABETH> {
+class IRC::Channel::Log:ver<0.0.35>:auth<zef:lizmat> {
     has IO() $.logdir    is required is built(:bind);
     has      $.class     is required is built(:bind);
     has      &.generator is required is built(:bind);
@@ -1558,7 +1558,7 @@ log.
 
 =head1 AUTHOR
 
-Elizabeth Mattijsen <liz@wenzperl.nl>
+Elizabeth Mattijsen <liz@raku.rocks>
 
 =head1 COPYRIGHT AND LICENSE
 
