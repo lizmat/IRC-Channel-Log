@@ -2,6 +2,9 @@ Revision history for IRC-Channel-Log
 
 {{$NEXT}}
 
+0.0.36  2021-09-08T11:41:58+02:00
+    - Argh, messed up the String::Color dependency in META
+
 0.0.35  2021-09-08T11:28:51+02:00
     - Migrate to zef ecosystem, update dependency
     - Update email address
