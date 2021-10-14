@@ -2,6 +2,13 @@ Revision history for IRC-Channel-Log
 
 {{$NEXT}}
 
+0.0.37  2021-10-14T12:39:15+02:00
+    - Tweak the default for batch / degree from some experimenting.
+      Turns out using half of the CPU cores makes things actually
+      faster than using all of them.  Probably because of hyperthreading
+      only making sense on different kinds of loads, and we're doing
+      a lot of the same when building a IRC::Channel::Log object.
+
 0.0.36  2021-09-08T11:41:58+02:00
     - Argh, messed up the String::Color dependency in META
 

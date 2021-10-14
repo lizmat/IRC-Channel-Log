@@ -59,8 +59,8 @@ my $channel = IRC::Channel::Log.new(
   generator => &generator,        # generate color for nick
   name      => "foobar",           # name of channel, default: logdir.basename
   state     => "state",            # directory containing persistent state info
-  batch     => 1,                  # number of logs parsed at a time, default: 6
-  degree    => 8,                  # threads used, default: Kernel.cpu-cores
+  batch     => 1,                  # number of logs parsed / time, default: 16
+  degree    => 8,                  # threads used, default: Kernel.cpu-cores/2
 );
 ```
 
@@ -79,7 +79,7 @@ This argument is required.
 
 ### :batch
 
-The batch size to use when racing to read all of the log files of the given channel. Defaults to 6 as an apparent optimal values to optimize for wallclock and not have excessive CPU usage. You can use `:!batch` to indicate you do not want any multi-threading: this is equivalent to specifying `1` or `0` or `True`.
+The batch size to use when racing to read all of the log files of the given channel. Defaults to 16 as an apparent optimal values to optimize for wallclock and not have excessive CPU usage. You can use `:!batch` to indicate you do not want any multi-threading: this is equivalent to specifying `1` or `0` or `True`.
 
 ### :class
 
@@ -87,7 +87,7 @@ The class to be used to interpret log files, e.g. `IRC::Log::Colabti`. This argu
 
 ### :degree
 
-The maximum number of threads to be used when racing to read all of the log files of the given channel. Defaults to `Kernel.cpu-cores` (aka the number of CPU cores the system claims to have).
+The maximum number of threads to be used when racing to read all of the log files of the given channel. Defaults to `Kernel.cpu-cores/2` (aka half the number of CPU cores the system claims to have).
 
 ### :generator
 

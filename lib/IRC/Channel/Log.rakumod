@@ -4,7 +4,7 @@ use Array::Sorted::Util:ver<0.0.7>:auth<zef:lizmat>;
 use JSON::Fast:ver<0.16>;
 use String::Color:ver<0.0.8>:auth<zef:lizmat>;
 
-class IRC::Channel::Log:ver<0.0.36>:auth<zef:lizmat> {
+class IRC::Channel::Log:ver<0.0.37>:auth<zef:lizmat> {
     has IO() $.logdir    is required is built(:bind);
     has      $.class     is required is built(:bind);
     has      &.generator is required is built(:bind);
@@ -32,8 +32,8 @@ class IRC::Channel::Log:ver<0.0.36>:auth<zef:lizmat> {
 
     # Not done creating the object yet
     submethod TWEAK(
-      :$batch = 6,
-      :$degree = Kernel.cpu-cores,
+      :$batch  = 16,
+      :$degree = Kernel.cpu-cores / 2,
     --> Nil) {
 
         # Read and process all log files asynchronously
@@ -951,8 +951,8 @@ my $channel = IRC::Channel::Log.new(
   generator => &generator,        # generate color for nick
   name      => "foobar",           # name of channel, default: logdir.basename
   state     => "state",            # directory containing persistent state info
-  batch     => 1,                  # number of logs parsed at a time, default: 6
-  degree    => 8,                  # threads used, default: Kernel.cpu-cores
+  batch     => 1,                  # number of logs parsed / time, default: 16
+  degree    => 8,                  # threads used, default: Kernel.cpu-cores/2
 );
 
 =end code
@@ -978,7 +978,7 @@ This argument is required.
 =head3 :batch
 
 The batch size to use when racing to read all of the log files of the
-given channel.  Defaults to 6 as an apparent optimal values to optimize
+given channel.  Defaults to 16 as an apparent optimal values to optimize
 for wallclock and not have excessive CPU usage.  You can use C<:!batch>
 to indicate you do not want any multi-threading: this is equivalent to
 specifying C<1> or C<0> or C<True>.
@@ -991,8 +991,8 @@ This argument is also required.
 =head3 :degree
 
 The maximum number of threads to be used when racing to read all of the
-log files of the given channel.  Defaults to C<Kernel.cpu-cores> (aka the
-number of CPU cores the system claims to have).
+log files of the given channel.  Defaults to C<Kernel.cpu-cores/2> (aka 
+half the number of CPU cores the system claims to have).
 
 =head3 :generator
 
