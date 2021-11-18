@@ -1,8 +1,8 @@
 use Test;
-use IRC::Log::Colabti;
+use IRC::Log::Colabti:ver<0.0.44>:auth<zef:lizmat>;
 use IRC::Channel::Log;
 
-plan 103;
+plan 98;
 
 my $logdir := $?FILE.IO.sibling('raku');
 my $state  := $?FILE.IO.sibling('state');
@@ -14,11 +14,10 @@ sub generator($nick) { "$nick.color" }
 # Generic tests
 
 my $channel = IRC::Channel::Log.new(:$logdir, :$class, :&generator, :$state);
-is $channel.problems.elems, 0,
-  'there should be no problems';
+is $channel.problems.elems, 0, 'there should be no problems';
 isa-ok $channel, IRC::Channel::Log;
 
-#.say for $channel.entries(:after-target<2021-04-23Z23:38>, :words<the>).head: 3;
+#.say for $channel.entries(:around-target<2021-04-23Z09:33>, :conversation);
 #=finish
 
 my str @dates = $channel.dates;
@@ -32,17 +31,10 @@ is $channel.initial-topic('2021-04-24').text, 'Raku Rocks!', 'topic ok';
 my %problems := $channel.problems;
 is +%problems, 0, 'did we get correct number of problems';
 
-my @nicks = $channel.nicks;
+my @nicks = $channel.nick-names;
 is +@nicks, 260, 'did we get correct number of nicks';
 is @nicks.sort.skip.head, "APic", 'is the first real nick ok';
 is @nicks.sort.tail, "|Sno|", 'is the last nick ok';
-
-@dates = $channel.dates-with('artifact');
-is +@dates, 1, 'did we get 1 date';
-is @dates.head, '2021-04-23', 'is the artifact date ok';
-
-@dates = $channel.dates-with('artifact', :dates<2021-04-24>);
-is +@dates, 0, 'did we get 0 dates';
 
 #-------------------------------------------------------------------------------
 # Tests on number of elements selected
@@ -55,22 +47,33 @@ for False, True -> $reverse {
     is $channel.entries(:conversation, :$reverse).elems, 464,
       'did we get correct number of  messages';
 
-    is $channel.entries(:nicks<lizmat>, :$reverse).elems, 119,
+    is $channel.entries(:nick-names<lizmat>, :$reverse).elems, 119,
       'did we get correct number of entries by lizmat';
 
-    is $channel.entries(:control, :nicks<lizmat>, :$reverse).elems, 2,
+    is $channel.entries(
+      :control, :nick-names<lizmat>, :$reverse
+    ).elems, 2,
       'did we get correct number of control messages by lizmat';
-    is $channel.entries(:conversation, :nicks<lizmat>, :$reverse).elems, 118,
+    is $channel.entries(
+      :conversation, :nick-names<lizmat>, :$reverse
+    ).elems, 118,
       'did we get correct number of conversation messages by lizmat';
 
     is $channel.entries(
-      :dates<2021-04-24>, :nicks<lizmat>, :$reverse
+      :dates<2021-04-23>, :nick-names<lizmat>, :$reverse
+    ).elems, 70,
+      'did we get correct number of entries by lizmat on 2021-04-23';
+    is $channel.entries(
+      :dates<2021-04-24>, :nick-names<lizmat>, :$reverse
     ).elems, 49,
       'did we get correct number of entries by lizmat on 2021-04-24';
     is $channel.entries(
-      :dates("2021-04-20".Date .. "2021-04-23".Date), :nicks<lizmat>, :$reverse
+      :dates("2021-04-20".Date .. "2021-04-23".Date),
+      :nick-names<lizmat>, :$reverse
     ).elems, 70, 'correct number of entries by lizmat from Date range';
-    is $channel.entries(:nicks<lizmat japhb>, :$reverse).elems, 147,
+    is $channel.entries(
+      :nick-names<lizmat japhb>, :$reverse
+    ).elems, 147,
       'correct number of entries by lizmat or japhb';
 
     is $channel.entries(:starts-with<m:>, :$reverse).elems, 17,
@@ -92,14 +95,14 @@ for False, True -> $reverse {
     is $channel.entries(:words<they always>, :all, :$reverse).elems, 1,
       'correct number of entries with the word "they" and "always"';
 
-    is $channel.entries(
-      :around-target<2021-04-23Z09:33>, :$reverse
-    ).elems, 21,
-      'did we get all 21 entries around the target?';
-    is $channel.entries(
-      :around-target<2021-04-23Z09:33>, :nr-entries(5), :$reverse
-    ).elems, 11,
-
+#    is $channel.entries(
+#      :around-target<2021-04-23Z09:33>, :$reverse
+#    ).elems, 21,
+#      'did we get all 21 entries around the target?';
+#    is $channel.entries(
+#      :around-target<2021-04-23Z09:33>, :nr-entries(5), :$reverse
+#    ).elems, 11,
+#
     is $channel.entries(
       :targets<2021-04-23Z09:33 2021-04-23Z14:04-0007 2021-04-24Z08:48-0001>,
       :$reverse
@@ -112,33 +115,31 @@ for False, True -> $reverse {
       'correct number of whitespaced multi-digit numbers';
 }
 
-is $channel.entries(:before-target<2021-04-24Z02:50>, :words<the>).elems, 60,
+is $channel.entries(:lt-target<2021-04-24Z02:50>, :words<the>).elems, 60,
   'did we get all entries before the target?';
-is $channel.entries(:until-target<2021-04-24Z02:50>, :words<the>).elems, 61,
+is $channel.entries(:le-target<2021-04-24Z02:50>, :words<the>).elems, 61,
   'did we get all entries until the target?';
-is $channel.entries(:from-target<2021-04-23Z23:38>, :words<the>).elems, 79,
+is $channel.entries(:ge-target<2021-04-23Z23:38>, :words<the>).elems, 79,
   'did we get all entries from the target?';
-is $channel.entries(:after-target<2021-04-23Z23:38>, :words<the>).elems, 78,
+is $channel.entries(:gt-target<2021-04-23Z23:38>, :words<the>).elems, 78,
   'did we get all entries after the target?';
 
 #-------------------------------------------------------------------------------
 # Same tests, but now checking on first / last entry
 
-sub first-last($first, $last = $first, :$no-reverse, |c) {
+sub first-last($first, $last = $first, |c) is test-assertion {
     subtest "checking first/last on {c.raku}" => {
-        plan $no-reverse ?? 2 !! 4;
+        plan 4;
 
         is $channel.entries(|c).head.gist, $first,
           'is first entry correct';
         is $channel.entries(:reverse, |c).tail.gist, $first,
-          'is last entry on reverse correct'
-          unless $no-reverse;
+          'is last entry on reverse correct';
 
         is $channel.entries(|c).tail.gist, $last,
           'is last entry correct';
         is $channel.entries(:reverse, |c).head.gist, $last,
-          'is first entry on reverse correct'
-          unless $no-reverse;
+          'is first entry on reverse correct';
     }
 }
 
@@ -156,30 +157,30 @@ first-last $first-control, $last-control, :!conversation;
 first-last
   '[08:39] <lizmat> :q',
   '[22:31] * lizmat is glad that japhb is around to answer questions while she hits the sack',
-  :nicks<lizmat>;
+  :nick-names<lizmat>;
 first-last
   '[11:09] *** lizmat is now known as lismat',
   '[23:48] *** lizmat changes topic to: Raku Rocks!',
-  :nicks<lizmat>, :control;
+  :nick-names<lizmat>, :control;
 first-last
   '[08:39] <lizmat> :q',
   '[22:31] * lizmat is glad that japhb is around to answer questions while she hits the sack',
-  :nicks<lizmat>, :conversation;
+  :nick-names<lizmat>, :conversation;
 
 first-last
   '[11:53] <lizmat> that would be *very* futuristic',
   '[22:31] * lizmat is glad that japhb is around to answer questions while she hits the sack',
-  :nicks<lizmat>, :dates<2021-04-24>;
+  :nick-names<lizmat>, :dates<2021-04-24>;
 
 first-last
   '[08:39] <lizmat> :q',
   '[23:48] *** lizmat changes topic to: Raku Rocks!',
-  :nicks<lizmat>, :dates("2021-04-20".Date .. "2021-04-23".Date);
+  :nick-names<lizmat>, :dates("2021-04-20".Date .. "2021-04-23".Date);
 
 first-last
   '[08:39] <lizmat> :q',
   '[23:44] <japhb> ^^ Why does that even work?  Why does &?BLOCK go to the given and not to the when?',
-  :nicks<lizmat japhb>;
+  :nick-names<lizmat japhb>;
 
 first-last
   '[09:30] <brtastic> m: sub (@arr) { @arr.push(5).say }((1, 2, 3))',
@@ -222,51 +223,52 @@ first-last
 first-last
   "[23:38] <summerisle> demostanis[m]: if it's any help (it probably isn't) it takes 2 minutes and 12 seconds to compile the rakudo distribution from Gentoo, this is with 56 threads on a 64 thread host.",
   "[23:44] <japhb> ^^ Why does that even work?  Why does &?BLOCK go to the given and not to the when?",
-  :no-reverse, :from-target<2021-04-23Z23:38>, :words<the>;
+  :ge-target<2021-04-23Z23:38>, :words<the>;
 
 first-last
-  "[23:38] <summerisle> demostanis[m]: if it's any help (it probably isn't) it takes 2 minutes and 12 seconds to compile the rakudo distribution from Gentoo, this is with 56 threads on a 64 thread host.",
   "[09:27] <PimDaniel> My has has : these kind of keys : '33:A/B' , '9:Y/Q' '117:C/G' and i need to sort by the first number befor the ':'.",
-  :no-reverse, :until-target<2021-04-23Z23:38>, :words<the>;
+  "[23:38] <summerisle> demostanis[m]: if it's any help (it probably isn't) it takes 2 minutes and 12 seconds to compile the rakudo distribution from Gentoo, this is with 56 threads on a 64 thread host.",
+  :le-target<2021-04-23Z23:38>, :words<the>;
 
 first-last
   "[02:27] <raydiak> demostanis[m]: I know it's several hours after the fact, but maybe you'll see this in the scrollback. 12m34s on a ryzen 5 2500u laptop (4 smt2 cores @ 2ghz/3.6ghz turbo) running manjaro...but I forgot to pass -j so that's single-threaded :P",
   "[23:44] <japhb> ^^ Why does that even work?  Why does &?BLOCK go to the given and not to the when?",
-  :no-reverse, :after-target<2021-04-23Z23:38>, :words<the>;
+  :gt-target<2021-04-23Z23:38>, :words<the>;
 
 first-last
-  "[02:46] <moon-child> (well, nqp and rakudo probably _could_ be built in parallel, but the makefile isn't set up in such a way that make knows how to do that)",
   "[09:27] <PimDaniel> My has has : these kind of keys : '33:A/B' , '9:Y/Q' '117:C/G' and i need to sort by the first number befor the ':'.",
-  :no-reverse, :before-target<2021-04-24Z02:50>, :words<the>;
+  "[02:46] <moon-child> (well, nqp and rakudo probably _could_ be built in parallel, but the makefile isn't set up in such a way that make knows how to do that)",
+  :lt-target<2021-04-24Z02:50>, :words<the>;
 
 first-last
   '[09:31] <lizmat> m: sub (@arr) { @arr.push(5).say }([1, 2, 3])',
   '[09:35] <PimDaniel> I\'d expect this kind of form : for %hash.sort(<condition>) -> $k { ...} ',
-  :no-reverse, :around-target<2021-04-23Z09:33>, :conversation;
+  :around-target<2021-04-23Z09:33>, :conversation;
 
 first-last
   "[09:33] <PimDaniel> This is to display hash and i must display the whole key.",
   "[08:48] <El_Che> so like dist do, I would package modules separately",
-  :targets<2021-04-23Z09:33 2021-04-23Z14:04-0007 2021-04-24Z08:48-0001>
-  :no-reverse;
+  :targets<2021-04-23Z09:33 2021-04-23Z14:04-0007 2021-04-24Z08:48-0001>;
 
 first-last
   "[09:31] <brtastic> ah cool",
   "[09:34] <camelia> rakudo-moar ea102883d: OUTPUT: «[1 2 3 5]␤»",
-  :no-reverse, :around-target<2021-04-23Z09:33>, :conversation, :5nr-entries;
+  :around-target<2021-04-23Z09:33>, :conversation, :5nr-entries;
 
 first-last
   '[13:52] <lizmat> 404 for the win!',
   '[21:16] <lizmat> m: my Blob[Any] $foo = "foo", 21',
   :matches(/ [^ | \s+] \d\d+ [\s+ | $] /);
 
-#-------------------------------------------------------------------------------# Utility methods tests
+#-------------------------------------------------------------------------------
+# Utility methods tests
 
 is-deeply
-  $channel.aliases-for-nick("simcop2387"),
+  $channel.aliases-for-nick-name("simcop2387"),
   (my str @ = <simcop2387 simcop2387_>),
-  'Did we get all the aliases for the nick';
-is $channel.cleaned-nick("simcop2387"), "simcop", 'did we get a cleaned nick';
+  'Did we get all the aliases for the nick name';
+is $channel.cleaned-nick-name("simcop2387"), "simcop",
+  'did we get a cleaned nick name';
 
 is $channel.this-date('2021-04-23'), '2021-04-23', 'did we get this date';
 is $channel.this-date('2021-04-22'), '2021-04-23', 'did we get next date';

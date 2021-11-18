@@ -2,6 +2,18 @@ Revision history for IRC-Channel-Log
 
 {{$NEXT}}
 
+0.0.38  2021-11-18T13:12:25+01:00
+    - Upped dependencies
+    - Adapted .entries logic to new IRC::Log.search features.  This
+      made life so much easier on so many levels in this module
+    - The old .nicks hash is gone.  Instead there is a .nick-names
+      method that returns a sorted list of nick names.  Internally
+      there still *is* a hash, but it is just used for nick name
+      lookups, and does not contain any usable values.
+    - Added :degree and :batch parameters to regulate parallelness
+    - Removed support for .dates-with methods: that kind of caching
+      is best done at the IRC::Log level, if anywhere.
+
 0.0.37  2021-10-14T12:39:15+02:00
     - Tweak the default for batch / degree from some experimenting.
       Turns out using half of the CPU cores makes things actually

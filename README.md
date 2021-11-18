@@ -24,13 +24,13 @@ say $channel.problems.elems;    # hash with problems / date
 .say for $channel.entries;      # all entries of this channel
 
 .say for $channel.entries(
-  :conversation,         # only return conversational messages
-  :control,              # only return control messages
-  :dates<2021-04-23>,    # limit to given date(s)
-  :nicks<lizmat japhb>,  # limit to given nick(s)
-  :contains<foo>,        # limit to containing given text
-  :starts-with<m:>,      # limit to starting with given text
-  :matches(/ /d+ /),     # limit to matching regex
+  :conversation,              # only return conversational messages
+  :control,                   # only return control messages
+  :dates<2021-04-23>,         # limit to given date(s)
+  :nick-names<lizmat japhb>,  # limit to given nick(s)
+  :contains<foo>,             # limit to containing given text
+  :starts-with<m:>,           # limit to starting with given text
+  :matches(/ /d+ /),          # limit to matching regex
 );
 
 $channel.watch-and-update;  # watch and process updates
@@ -113,23 +113,23 @@ say "$channel.name() is active" if $channel.active;
 
 The `active` instance method returns whether the channel is considered to be active. If a `state` directory has been specified, and that directory contains a file named "inactive", then the channel is considered to **not** be active.
 
-aliases-for-nick
-----------------
+aliases-for-nick-name
+---------------------
 
 ```raku
-my @aliases = $channel.aliases-for-nick($nick);
+my @aliases = $channel.aliases-for-nick-name($nick);
 ```
 
-The `aliases-for-nick` instance method returns a sorted list of nicks that are assumed to be aliases (aka, have the same color) for the given nick.
+The `aliases-for-nick-name` instance method returns a sorted list of nick names that are assumed to be aliases (aka, have the same color) for the given nick name.
 
 cleaned-nick
 ------------
 
 ```raku
-my $cleaned = $channel.cleaned-nick($nick);
+my $cleaned = $channel.cleaned-nick-name($nick);
 ```
 
-The `cleaned-nick` instance method returns the cleaned version of the given nick, which is used to group together the aliases of a nick.
+The `cleaned-nick-name` instance method returns the cleaned version of the given nick nae, which is used to group together the aliases of a nick name.
 
 dates
 -----
@@ -185,7 +185,7 @@ entries
 
 The `entries` instance method is *the* workhorse for selecting entries from the log. It will always return messages in chronological order.
 
-It takes a number of (optional) named arguments that allows you to select the entries from the log that you need. Named arguments may be combined, although some combinations do not make a lot of sense (which will generally mean that some of them will be ignored.
+It takes a number of (optional) named arguments that allows you to select the entries from the log that you need. Named arguments may be combined, although some combinations do not make a lot of sense (which will generally mean that some of them will be ignored).
 
 If no (valid) named arguments are specified, then **all** entries from the log will be produced: this allows you to do any ad-hoc filtering.
 
@@ -304,15 +304,15 @@ The `matches` named argument allows one to specify a `Regex` to indicate which e
 
 Since this only applies to conversational entries, any additional setting of the `conversation` or `control` named arguments are ignored.
 
-### :nicks
+### :nick-names
 
 ```raku
-$channel.entries(:nicks<lizmat>);        # limit to "lizmat"
+$channel.entries(:nick-names<lizmat>);        # limit to "lizmat"
 
-$channel.entries(:nicks<lizmat japhb>);  # limit to "lizmat" or "japhb"
+$channel.entries(:nick-names<lizmat japhb>);  # limit to "lizmat" or "japhb"
 ```
 
-The `nicks` named argument allows one to specify one or more nicks to indicate which entries should be selected.
+The `nick-names` named argument allows one to specify one or more nick names to indicate which entries should be selected.
 
 ### :nr-entries
 
@@ -421,24 +421,14 @@ say $channel.next-date($date);  # date after the given date with a log
 
 The `next-date` instance method takes a string representing a date, and returns a string with the **next** date of logs that are available. Returns `Nil` if the specified date is the last date or after that.
 
-nick-mapped
------------
+nick-names
+----------
 
 ```raku
-my %mapped := $channel.nick-mapped;  # thread-safe hash copy
-say %mapped<liz>;  # <span style="color: #deadbeef">liz</span>
+say $channel.nick-names;  # the nick names for which there are logs available
 ```
 
-The `nick-mapped` instance method returns a `Map` of all nicks and their `nick-mapped` HTML in a thread-safe manner (as new nicks **can** be added during the lifetime of the process).
-
-nicks
------
-
-```raku
-say $channel.nicks;          # the nicks for which there are logs available
-```
-
-The `nicks` instance method returns a sorted list of nicks of which there are entries available.
+The `nick-names` instance method returns a sorted list of all the nick names seen.
 
 prev-date
 ---------
