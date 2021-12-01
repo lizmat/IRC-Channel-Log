@@ -2,7 +2,7 @@ use Array::Sorted::Util:ver<0.0.8>:auth<zef:lizmat>;
 use JSON::Fast:ver<0.16>;
 use String::Color:ver<0.0.9>:auth<zef:lizmat>;
 
-class IRC::Channel::Log:ver<0.0.38>:auth<zef:lizmat> {
+class IRC::Channel::Log:ver<0.0.39>:auth<zef:lizmat> {
     has IO() $.logdir    is required is built(:bind);
     has      $.class     is required is built(:bind);
     has      &.generator is required is built(:bind);
@@ -127,17 +127,21 @@ class IRC::Channel::Log:ver<0.0.38>:auth<zef:lizmat> {
 
             if $reverse {
                 %options<reverse> := True;
-                for @dates.reverse -> str $date {
+                for @dates.reverse.map(-> $date {
+                    $_ with self.log($date)
+                }) -> $log {
                     use nqp;    # Waiting for IterationBuffer.unshift
                     nqp::unshift($buffer,$_)
-                      for self.log($date).search(|%options).head($todo);
+                      for $log.search(|%options).head($todo);
                     last unless $todo = $entries - $buffer.elems;
                 }
             }
             else {
-                for @dates -> str $date {
+                for @dates.map(-> $date {
+                    $_ with self.log($date)
+                }) -> $log {
                     $buffer.push($_)
-                      for self.log($date).search(|%options).head($todo);
+                      for $log.search(|%options).head($todo);
                     last unless $todo = $entries - $buffer.elems;
                 }
             }

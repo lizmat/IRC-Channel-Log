@@ -2,6 +2,11 @@ Revision history for IRC-Channel-Log
 
 {{$NEXT}}
 
+0.0.39  2021-12-01T21:46:47+01:00
+    - While searching, make sure we properly handle dates for which
+      there is no log available
+    - Upped dependencies
+
 0.0.38  2021-11-18T13:12:25+01:00
     - Upped dependencies
     - Adapted .entries logic to new IRC::Log.search features.  This
