@@ -6,8 +6,8 @@
   "build-depends": [
   ],
   "depends": [
-    "Array::Sorted::Util:ver<0.0.8>:auth<zef:lizmat>",
-    "JSON::Fast:ver<0.16>",
+    "Array::Sorted::Util:ver<0.0.9>:auth<zef:lizmat>",
+    "JSON::Fast:ver<0.17>",
     "String::Color:ver<0.0.9>:auth<zef:lizmat>"
   ],
   "description": "access to all logs of an IRC channel",
@@ -25,5 +25,5 @@
   "test-depends": [
     "IRC::Log::Colabti:ver<0.0.50>:auth<zef:lizmat>"
   ],
-  "version": "0.0.39"
+  "version": "0.0.40"
 }
