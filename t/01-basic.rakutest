@@ -1,6 +1,6 @@
 use Test;
-use IRC::Log::Colabti:ver<0.0.50>:auth<zef:lizmat>;
-use IRC::Channel::Log;
+use IRC::Log::Colabti:auth<zef:lizmat>;
+use IRC::Channel::Log:auth<zef:lizmat>;;
 
 plan 98;
 

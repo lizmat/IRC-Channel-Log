@@ -2,7 +2,7 @@ use Array::Sorted::Util:ver<0.0.9>:auth<zef:lizmat>;
 use JSON::Fast:ver<0.17>;
 use String::Color:ver<0.0.9>:auth<zef:lizmat>;
 
-class IRC::Channel::Log:ver<0.0.40>:auth<zef:lizmat> {
+class IRC::Channel::Log:ver<0.0.41>:auth<zef:lizmat> {
     has IO() $.logdir    is required is built(:bind);
     has      $.class     is required is built(:bind);
     has      &.generator is required is built(:bind);

@@ -23,7 +23,7 @@
   "tags": [
   ],
   "test-depends": [
-    "IRC::Log::Colabti:ver<0.0.50>:auth<zef:lizmat>"
+    "IRC::Log::Colabti:ver<0.0.51>:auth<zef:lizmat>"
   ],
-  "version": "0.0.40"
+  "version": "0.0.41"
 }
