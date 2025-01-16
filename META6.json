@@ -6,9 +6,9 @@
   "build-depends": [
   ],
   "depends": [
-    "Array::Sorted::Util:ver<0.0.9>:auth<zef:lizmat>",
-    "JSON::Fast:ver<0.17>",
-    "String::Color:ver<0.0.9>:auth<zef:lizmat>"
+    "Array::Sorted::Util:ver<0.0.11+>:auth<zef:lizmat>",
+    "JSON::Fast:ver<0.19+>",
+    "String::Color:ver<0.0.11+>:auth<zef:lizmat>"
   ],
   "description": "access to all logs of an IRC channel",
   "license": "Artistic-2.0",
@@ -21,9 +21,11 @@
   ],
   "source-url": "https://github.com/lizmat/IRC-Channel-Log.git",
   "tags": [
+    "IRC",
+    "LOG"
   ],
   "test-depends": [
-    "IRC::Log::Colabti:ver<0.0.51>:auth<zef:lizmat>"
+    "IRC::Log::Colabti:ver<0.0.52+>:auth<zef:lizmat>"
   ],
   "version": "0.0.41"
 }

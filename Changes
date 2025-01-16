@@ -1,12 +1,16 @@
 Revision history for IRC-Channel-Log
 
 {{$NEXT}}
+    - Up dependencies
+    - Add CI badge for each OS
+    - Add sponsor button and link
+    - Update copyright year
 
 0.0.41  2022-05-08T15:58:42+02:00
-    - Upped dependencies
+    - Up dependencies
 
 0.0.40  2022-02-11T18:04:28+01:00
-    - Upped dependencies
+    - Up dependencies
 
 0.0.39  2021-12-01T21:46:47+01:00
     - While searching, make sure we properly handle dates for which

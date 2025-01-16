@@ -2,5 +2,6 @@
 /IRC-Channel-Log-*
 lib/IRC/Log/
 /releases/
+*.rakucov
 /logs
 /11
