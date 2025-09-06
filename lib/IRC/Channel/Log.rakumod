@@ -1,5 +1,5 @@
 use Array::Sorted::Util:ver<0.0.11+>:auth<zef:lizmat>;
-use JSON::Fast:ver<0.19+>;
+use JSON::Fast:ver<0.19+>:auth<cpan:TIMOTIMO>;
 use String::Color:ver<0.0.11+>:auth<zef:lizmat>;
 
 class IRC::Channel::Log:ver<0.0.42>:auth<zef:lizmat> {

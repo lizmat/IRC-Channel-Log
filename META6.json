@@ -9,7 +9,7 @@
     "runtime": {
       "requires": [
         "Array::Sorted::Util:ver<0.0.11+>:auth<zef:lizmat>",
-        "JSON::Fast:ver<0.19+>",
+        "JSON::Fast:ver<0.19+>:auth<cpan:TIMOTIMO>",
         "String::Color:ver<0.0.11+>:auth<zef:lizmat>"
       ]
     },
