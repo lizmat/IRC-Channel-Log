@@ -5,27 +5,42 @@
   ],
   "build-depends": [
   ],
-  "depends": [
-    "Array::Sorted::Util:ver<0.0.11+>:auth<zef:lizmat>",
-    "JSON::Fast:ver<0.19+>",
-    "String::Color:ver<0.0.11+>:auth<zef:lizmat>"
-  ],
-  "description": "access to all logs of an IRC channel",
+  "depends": {
+    "runtime": {
+      "requires": [
+        "Array::Sorted::Util:ver<0.0.11+>:auth<zef:lizmat>",
+        "JSON::Fast:ver<0.19+>",
+        "String::Color:ver<0.0.11+>:auth<zef:lizmat>"
+      ]
+    },
+    "test": {
+      "requires": [
+        [
+          "IRC::Log::Colabti:ver<0.0.52+>:auth<zef:lizmat>"
+        ]
+      ]
+    }
+  },
+  "description": "Access to all logs of an IRC channel",
   "license": "Artistic-2.0",
   "name": "IRC::Channel::Log",
-  "perl": "6.d",
   "provides": {
     "IRC::Channel::Log": "lib/IRC/Channel/Log.rakumod"
   },
+  "raku": "6.d",
   "resources": [
   ],
   "source-url": "https://github.com/lizmat/IRC-Channel-Log.git",
+  "support": {
+    "bugtracker": "https://github.com/lizmat/IRC-Channel-Log/issues",
+    "email": "liz@raku.rocks",
+    "source": "https://github.com/lizmat/IRC-Channel-Log.git"
+  },
   "tags": [
     "IRC",
     "LOG"
   ],
   "test-depends": [
-    "IRC::Log::Colabti:ver<0.0.52+>:auth<zef:lizmat>"
   ],
   "version": "0.0.41"
 }

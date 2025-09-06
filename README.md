@@ -3,7 +3,7 @@
 NAME
 ====
 
-IRC::Channel::Log - access to all logs of an IRC channel
+IRC::Channel::Log - Access to all logs of an IRC channel
 
 SYNOPSIS
 ========
@@ -511,7 +511,7 @@ If you like this module, or what I'm doing more generally, committing to a [smal
 COPYRIGHT AND LICENSE
 =====================
 
-Copyright 2021, 2025 Elizabeth Mattijsen
+Copyright 2021, 2022, 2025 Elizabeth Mattijsen
 
 This library is free software; you can redistribute it and/or modify it under the Artistic License 2.0.
 

@@ -1,11 +1,11 @@
 use Test;
 use IRC::Log::Colabti:auth<zef:lizmat>;
-use IRC::Channel::Log:auth<zef:lizmat>;;
+use IRC::Channel::Log:auth<zef:lizmat>;
 
 plan 98;
 
-my $logdir := $?FILE.IO.sibling('raku');
-my $state  := $?FILE.IO.sibling('state');
+my $logdir := $*PROGRAM.sibling('raku');
+my $state  := $*PROGRAM.sibling('state');
 my $class  := IRC::Log::Colabti;
 
 sub generator($nick) { "$nick.color" }

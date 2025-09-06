@@ -2,12 +2,11 @@
 
 =head1 NAME
 
-IRC::Channel::Log - access to all logs of an IRC channel
+IRC::Channel::Log - Access to all logs of an IRC channel
 
 =head1 SYNOPSIS
 
 =begin code :lang<raku>
-
 use IRC::Log::Colabti;  # class implementing one day of logs
 use IRC::Channel::Log;
 
@@ -35,7 +34,6 @@ say $channel.problems.elems;    # hash with problems / date
 $channel.watch-and-update;  # watch and process updates
 
 $channel.shutdown;          # perform all necessary actions on shutdown
-
 =end code
 
 =head1 DESCRIPTION
@@ -48,7 +46,6 @@ of a channel.
 =head2 new
 
 =begin code :lang<raku>
-
 use IRC::Log::Colabti;  # class implementing one day of logs
 use IRC::Channel::Log;
 
@@ -61,7 +58,6 @@ my $channel = IRC::Channel::Log.new(
   batch     => 1,                  # number of logs parsed / time, default: 16
   degree    => 8,                  # threads used, default: Kernel.cpu-cores/2
 );
-
 =end code
 
 The C<new> class method returns an C<IRC::Channel::Log> object.  It takes
@@ -121,9 +117,7 @@ persistent state information of the channel is located.
 =head2 active
 
 =begin code :lang<raku>
-
 say "$channel.name() is active" if $channel.active;
-
 =end code
 
 The C<active> instance method returns whether the channel is considered to
@@ -132,9 +126,7 @@ contains a file named "inactive", then the channel is considered to B<not>
 be active.
 
 =head2 aliases-for-nick-name
-
 =begin code :lang<raku>
-
 my @aliases = $channel.aliases-for-nick-name($nick);
 
 =end code
@@ -146,9 +138,7 @@ given nick name.
 =head2 cleaned-nick
 
 =begin code :lang<raku>
-
 my $cleaned = $channel.cleaned-nick-name($nick);
-
 =end code
 
 The C<cleaned-nick-name> instance method returns the cleaned version of
@@ -158,9 +148,7 @@ nick name.
 =head2 dates
 
 =begin code :lang<raku>
-
 say $channel.dates;          # the dates for which there are logs available
-
 =end code
 
 The C<dates> instance method returns a sorted list of dates (as strings
@@ -169,7 +157,6 @@ in YYYY-MM-DD format) of which there are entries available.
 =head2 entries
 
 =begin code :lang<raku>
-
 .say for $channel.entries;             # all entries in chronological order
 
 .say for $channel.entries(:reverse);   # in reverse chronological order
@@ -207,7 +194,6 @@ in YYYY-MM-DD format) of which there are entries available.
   :nicks<lizmat japhb>,
   :contains<question answer>, :all,
 );
-
 =end code
 
 The C<entries> instance method is *the* workhorse for selecting entries
@@ -226,9 +212,7 @@ The following named arguments are supported:
 =head3 :after-target
 
 =begin code :lang<raku>
-
 $channel.entries(:after-target<2021-04-23Z23:36>);
-
 =end code
 
 The C<after-target> named argument can be used with any of the other named
@@ -248,11 +232,9 @@ entries to only be selected if B<all> conditions are true.
 =head3 :around-target
 
 =begin code :lang<raku>
-
 $channel.entries(:around-target<2021-04-23Z23:36>);  # default 10 entries
 
 $channel.entries(:around-target<2021-04-23Z23:36>, :nr-entries(5));
-
 =end code
 
 The C<around-target> named argument can be used with any of the other named
@@ -268,9 +250,7 @@ if it would have been C<-0000>.
 =head3 :before-target
 
 =begin code :lang<raku>
-
 $channel.entries(:after-target<2021-04-24Z02:50>);
-
 =end code
 
 The C<before-target> named argument can be used with any of the other named
@@ -284,7 +264,6 @@ if it would have been C<-0000>.
 =head3 :contains
 
 =begin code :lang<raku>
-
 # just "question"
 $channel.entries(:contains<question>);
 
@@ -296,7 +275,6 @@ $channel.entries(:contains<question answer>, :ignorecase);
 
 # "question" and "answer"
 $channel.entries(:contains<question answer>, :all);
-
 =end code
 
 The C<contains> named argument allows specification of one or more
@@ -315,11 +293,9 @@ ignored.
 =head3 :control
 
 =begin code :lang<raku>
-
 $channel.entries(:control);   # control messages only
 
 $channel.entries(:!control);  # all but control messages
-
 =end code
 
 The C<control> named argument specifies whether to limit to control
@@ -328,11 +304,9 @@ messages only or not.
 =head3 :conversation
 
 =begin code :lang<raku>
-
 $channel.entries(:conversation);   # conversational messages only
 
 $channel.entries(:!conversation);  # all but conversational messages
-
 =end code
 
 The C<conversation> named argument specifies whether to limit to
@@ -341,12 +315,10 @@ conversational messages only or not.
 =head3 :dates
 
 =begin code :lang<raku>
-
 $channel.entries(:dates<2021-04-23>);   # just on one date
 
 my @dates = Date.today ... Date.today.earlier(:3days);
 $channel.entries(:@dates);              # multiple dates
-
 =end code
 
 The C<dates> named argument allows one to specify the date(s) from
@@ -357,9 +329,7 @@ ascending sort order.
 =head3 :from-target
 
 =begin code :lang<raku>
-
 $channel.entries(:from-target<2021-04-23Z23:36>);
-
 =end code
 
 The C<from-target> named argument can be used with any of the other named
@@ -379,9 +349,7 @@ a true value, it will do all comparisons in a case-insensitive manner.
 =head3 :matches
 
 =begin code :lang<raku>
-
 $channel.entries(:matches(/ \d+ /);    # matching regex
-
 =end code
 
 The C<matches> named argument allows one to specify a C<Regex> to
@@ -394,11 +362,9 @@ ignored.
 =head3 :nick-names
 
 =begin code :lang<raku>
-
 $channel.entries(:nick-names<lizmat>);        # limit to "lizmat"
 
 $channel.entries(:nick-names<lizmat japhb>);  # limit to "lizmat" or "japhb"
-
 =end code
 
 The C<nick-names> named argument allows one to specify one or more
@@ -413,10 +379,8 @@ be fetched before / after the given target.
 =head3 :reverse
 
 =begin code :lang<raku>
-
 .say for $channel.entries(:reverse);   # all messages, most recent first
 .say for $channel.entries(:!reverse);  # all messages, oldest first
-
 =end code
 
 The C<reverse> named argument allows one to specify the order in which entries
@@ -426,7 +390,6 @@ recent entries first, in reverse chronological order.
 =head3 :starts-with
 
 =begin code :lang<raku>
-
 # starts with "m:"
 $channel.entries(:starts-with<m:>);
 
@@ -435,7 +398,6 @@ $channel.entries(:starts-with<how>, :ignorecase);
 
 # starts with "m:" or "j:"
 $channel.entries(:starts-with<m: j:>);
-
 =end code
 
 The C<start-with> named argument allows specification of one or more
@@ -451,9 +413,7 @@ ignored.
 =head3 :targets
 
 =begin code :lang<raku>
-
 .say for $channel.entries(:@targets);
-
 =end code
 
 The C<targets> named argument allows specification of one or more targets
@@ -462,7 +422,6 @@ for which to return the associated entry.
 =head3 :words
 
 =begin code :lang<raku>
-
 # contains the word "foo"
 $channel.entries(:words<foo>);
 
@@ -474,7 +433,6 @@ $channel.entries(:words<foo bar>, :ignorecase);
 
 # contains the word "foo" *and* "bar"
 $channel.entries(:words<foo bar>, :all);
-
 =end code
 
 The C<words> named argument allows specification of one or more words that
@@ -493,9 +451,7 @@ ignored.
 =head2 initial-topic
 
 =begin code :lang<raku>
-
 say $channel.initial-topic($date);
-
 =end code
 
 The C<initial-topic> instance method takes a date (either as a
@@ -506,9 +462,7 @@ C<Nil> if no topic is known for the given date.
 =head2 is-first-date-of-month
 
 =begin code :lang<raku>
-
 say $channel.is-first-date-of-month($date);
-
 =end code
 
 The C<is-first-date-of-month> instance method takes a date (either as a
@@ -518,9 +472,7 @@ first date of the month, according to availability in the logs.
 =head2 is-first-date-of-year
 
 =begin code :lang<raku>
-
 say $channel.is-first-date-of-year($date);
-
 =end code
 
 The C<is-first-date-of-month> instance method takes a date (either as a
@@ -530,9 +482,7 @@ date of the year, according to availability in the logs.
 =head2 log
 
 =begin code :lang<raku>
-
 say $channel.log($date);  # log object for given date
-
 =end code
 
 The C<log> instance method takes a string representing a date, and returns
@@ -542,9 +492,7 @@ log available on the specified date.
 =head2 next-date
 
 =begin code :lang<raku>
-
 say $channel.next-date($date);  # date after the given date with a log
-
 =end code
 
 The C<next-date> instance method takes a string representing a date, and
@@ -554,9 +502,7 @@ C<Nil> if the specified date is the last date or after that.
 =head2 nick-names
 
 =begin code :lang<raku>
-
 say $channel.nick-names;  # the nick names for which there are logs available
-
 =end code
 
 The C<nick-names> instance method returns a sorted list of all the nick
@@ -565,9 +511,7 @@ names seen.
 =head2 prev-date
 
 =begin code :lang<raku>
-
 say $channel.prev-date($date);  # date before the given date with a log
-
 =end code
 
 The C<prev-date> instance method takes a string representing a date, and
@@ -577,9 +521,7 @@ Returns C<Nil> if the specified date is the first date or before that.
 =head2 problems
 
 =begin code :lang<raku>
-
 .say for $channel.problems;  # the dates with log parsing problems
-
 =end code
 
 The C<problems> instance method returns a sorted list of C<Pair>s with
@@ -589,9 +531,7 @@ descriptions as value.
 =head2 sc
 
 =begin code :lang<raku>
-
 say "$channel.sc.elems() nick to color mappings are known";
-
 =end code
 
 The C<String::Color> object that contains the mapping of nick to color.
@@ -599,9 +539,7 @@ The C<String::Color> object that contains the mapping of nick to color.
 =head2 shutdown
 
 =begin code :lang<raku>
-
 $channel.shutdown;
-
 =end code
 
 Performs all the actions needed to shutdown: specifically saves the nick
@@ -610,9 +548,7 @@ to color mapping if a C<state> directory was specified.
 =head2 state
 
 =begin code :lang<raku>
-
 say "state is saved in $channel.state()";
-
 =end code
 
 The C<IO> object of the directory in which persistent state will be saved.
@@ -620,9 +556,7 @@ The C<IO> object of the directory in which persistent state will be saved.
 =head2 this-date
 
 =begin code :lang<raku>
-
 say $channel.this-date($date);  # date after / before the given date
-
 =end code
 
 The C<this-date> instance method takes a string representing a date, and
@@ -634,13 +568,11 @@ which would effectively mean that there are B<no> dates in the log.
 =head2 watch-and-update
 
 =begin code :lang<raku>
-
 $channel.watch-and-update;
 
 $channel.watch-and-update post-process => {
     say "$channel.name(): $_.message()"
 }
-
 =end code
 
 The C<watch-and-update> instance method starts a thread (and returns its
