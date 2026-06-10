@@ -1,6 +1,8 @@
 Revision history for IRC-Channel-Log
 
 {{$NEXT}}
+    - Up dependency on JSON::Fast
+    - Update copyright year
 
 0.0.42  2025-09-06T10:44:54+02:00
     - Up dependencies
