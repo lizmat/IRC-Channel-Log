@@ -1,6 +1,7 @@
 Revision history for IRC-Channel-Log
 
 {{$NEXT}}
+    - Up dependencies to make it RakuAST ready
 
 0.0.43  2026-06-10T11:50:34+02:00
     - Up dependency on JSON::Fast

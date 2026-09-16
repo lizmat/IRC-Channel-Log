@@ -9,14 +9,14 @@
     "runtime": {
       "requires": [
         "Array::Sorted::Util:ver<0.0.11+>:auth<zef:lizmat>",
-        "JSON::Fast:ver<0.20+>:auth<zef:timo>",
+        "JSON::Fast:ver<0.21+>:auth<zef:timo>",
         "String::Color:ver<0.0.11+>:auth<zef:lizmat>"
       ]
     },
     "test": {
       "requires": [
         [
-          "IRC::Log::Colabti:ver<0.0.52+>:auth<zef:lizmat>"
+          "IRC::Log::Colabti:ver<0.0.53+>:auth<zef:lizmat>"
         ]
       ]
     }
@@ -30,11 +30,11 @@
   "raku": "6.d",
   "resources": [
   ],
-  "source-url": "https://github.com/lizmat/IRC-Channel-Log.git",
+  "source-url": "https://codeberg.org/lizmat/IRC-Channel-Log.git",
   "support": {
-    "bugtracker": "https://github.com/lizmat/IRC-Channel-Log/issues",
+    "bugtracker": "https://codeberg.org/lizmat/IRC-Channel-Log/issues",
     "email": "liz@raku.rocks",
-    "source": "https://github.com/lizmat/IRC-Channel-Log.git"
+    "source": "https://codeberg.org/lizmat/IRC-Channel-Log.git"
   },
   "tags": [
     "IRC",
