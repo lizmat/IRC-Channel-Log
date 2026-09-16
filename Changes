@@ -1,6 +1,8 @@
 Revision history for IRC-Channel-Log
 
 {{$NEXT}}
+
+0.0.44  2026-09-16T19:55:24+02:00
     - Up dependencies to make it RakuAST ready
 
 0.0.43  2026-06-10T11:50:34+02:00
